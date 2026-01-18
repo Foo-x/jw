@@ -5,8 +5,7 @@ A CLI tool for easily managing jujutsu workspaces.
 ## Installation
 
 ```bash
-bun install
-bun link
+bun i -g github:foo-x/jw
 ```
 
 This makes the `jw` command available globally.
@@ -85,11 +84,9 @@ Create a `.jwconfig` file in the project root:
 ## Development
 
 ```bash
-# Install dependencies
 bun install
-
-# Run
-bun run src/index.ts <command>
+bun link
+jw <command>
 ```
 
 ## License
