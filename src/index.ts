@@ -22,8 +22,59 @@ Usage:
   jw rename <old> <new>          Rename a workspace
   jw copy <name>                 Copy files from default workspace to specified workspace
   jw clean                       Remove non-existent workspaces from config
+  jw completion <shell>          Generate completion script for the specified shell
   jw help                        Show this help
 `);
+}
+
+function generateBashCompletion(): void {
+  console.log(`_jw_completion() {
+    local cur prev words cword
+    _init_completion || return
+
+    local subcommands="new list go rm rename copy clean completion help"
+
+    # Handle subcommand completion
+    if [[ $cword -eq 1 ]]; then
+        COMPREPLY=($(compgen -W "$subcommands" -- "$cur"))
+        return
+    fi
+
+    local subcommand="\${words[1]}"
+
+    case "$subcommand" in
+        new)
+            if [[ $prev == "-r" || $prev == "--revision" ]]; then
+                return
+            fi
+            COMPREPLY=($(compgen -W "-r --revision" -- "$cur"))
+            ;;
+        go|rm|copy)
+            if [[ $cword -eq 2 ]]; then
+                local workspaces
+                workspaces=$(jw list 2>/dev/null | command grep -E "^  [* ] [✓✗]" | awk '{if ($1 == "*") print $3; else print $2}')
+                COMPREPLY=($(compgen -W "$workspaces" -- "$cur"))
+            fi
+            ;;
+        rename)
+            if [[ $cword -eq 2 ]]; then
+                local workspaces
+                workspaces=$(jw list 2>/dev/null | command grep -E "^  [* ] [✓✗]" | awk '{if ($1 == "*") print $3; else print $2}')
+                COMPREPLY=($(compgen -W "$workspaces" -- "$cur"))
+            fi
+            ;;
+        completion)
+            if [[ $cword -eq 2 ]]; then
+                COMPREPLY=($(compgen -W "bash" -- "$cur"))
+            fi
+            ;;
+        *)
+            ;;
+    esac
+}
+
+complete -F _jw_completion jw
+`)
 }
 
 async function main() {
@@ -96,6 +147,22 @@ async function main() {
 
       case "clean":
         await cleanWorkspaces();
+        break;
+
+      case "completion":
+        if (args.length < 2) {
+          console.error("Error: Please specify a shell");
+          console.error("Usage: jw completion <shell>");
+          console.error("Supported shells: bash");
+          process.exit(1);
+        }
+        if (args[1] === "bash") {
+          generateBashCompletion();
+        } else {
+          console.error(`Error: Unsupported shell "${args[1]}"`);
+          console.error("Supported shells: bash");
+          process.exit(1);
+        }
         break;
 
       case "help":
