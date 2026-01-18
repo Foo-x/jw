@@ -1,0 +1,11 @@
+{
+  "workspaces": [
+  ],
+  "copyFiles": [
+    ".env",
+    "node_modules"
+  ],
+  "postCreateCommands": [
+    "bun install"
+  ]
+}
