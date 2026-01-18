@@ -1,5 +1,6 @@
 import { existsSync } from "fs";
-import { resolve } from "path";
+import { join } from "path";
+import { getDefaultWorkspacePath } from "./utils.ts";
 
 export interface Config {
   workspaces: string[];
@@ -10,7 +11,7 @@ export interface Config {
 const CONFIG_FILE_NAME = ".jwconfig";
 
 function getConfigPath(): string {
-  return resolve(process.cwd(), CONFIG_FILE_NAME);
+  return join(getDefaultWorkspacePath(), CONFIG_FILE_NAME);
 }
 
 export function getDefaultConfig(): Config {

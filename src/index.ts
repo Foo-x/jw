@@ -16,7 +16,7 @@ jw - jujutsu workspace management CLI
 Usage:
   jw new <name>      Create a new workspace
   jw list            List all workspaces
-  jw go <name>       Output workspace path
+  jw go [name]       Output workspace path (defaults to "default")
   jw rm <name>       Remove a workspace
   jw copy <name>     Copy files from default workspace to specified workspace
   jw clean           Remove non-existent workspaces from config
@@ -50,12 +50,7 @@ async function main() {
         break;
 
       case "go":
-        if (args.length < 2) {
-          console.error("Error: Please specify a workspace name");
-          console.error("Usage: jw go <name>");
-          process.exit(1);
-        }
-        await goWorkspace(args[1]);
+        await goWorkspace(args[1] || "default");
         break;
 
       case "rm":

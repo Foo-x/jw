@@ -9,6 +9,7 @@ import {
 import {
   execCommand,
   getRepoRoot,
+  getDefaultWorkspacePath,
   getWorkspacePath,
   getWorkspacesDir,
   copyFileOrDir,
@@ -72,21 +73,27 @@ export async function newWorkspace(name: string): Promise<void> {
 
 export async function listWorkspaces(): Promise<void> {
   const config = await loadConfig();
-
-  if (config.workspaces.length === 0) {
-    console.log("No workspaces found");
-    return;
-  }
+  const defaultPath = getDefaultWorkspacePath();
+  const currentPath = getRepoRoot();
 
   console.log("Workspaces:");
+  const defaultMark = currentPath === defaultPath ? "*" : " ";
+  console.log(`  ${defaultMark} ✓ default (${defaultPath})`);
+
   for (const ws of config.workspaces) {
     const path = getWorkspacePath(ws);
     const exists = existsSync(path) ? "✓" : "✗";
-    console.log(`  ${exists} ${ws}`);
+    const mark = currentPath === path ? "*" : " ";
+    console.log(`  ${mark} ${exists} ${ws} (${path})`);
   }
 }
 
 export async function goWorkspace(name: string): Promise<void> {
+  if (name === "default") {
+    console.log(getDefaultWorkspacePath());
+    return;
+  }
+
   const normalizedName = normalizeWorkspaceName(name);
   const workspacePath = getWorkspacePath(normalizedName);
 

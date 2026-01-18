@@ -1,4 +1,4 @@
-import { existsSync, statSync } from "fs";
+import { existsSync, statSync, readFileSync } from "fs";
 import { basename, dirname, resolve, join } from "path";
 
 export async function execCommand(
@@ -33,14 +33,36 @@ export function getRepoRoot(): string {
 }
 
 export function getRepoName(): string {
-  const repoRoot = getRepoRoot();
-  return basename(repoRoot);
+  const defaultPath = getDefaultWorkspacePath();
+  return basename(defaultPath);
+}
+
+export function getDefaultWorkspacePath(): string {
+  const currentWorkspaceRoot = getRepoRoot();
+  const repoPath = join(currentWorkspaceRoot, ".jj", "repo");
+
+  if (!existsSync(repoPath)) {
+    throw new Error("Could not find .jj/repo");
+  }
+
+  const stat = statSync(repoPath);
+
+  // If .jj/repo is a directory, we are in the default workspace
+  if (stat.isDirectory()) {
+    return currentWorkspaceRoot;
+  }
+
+  // If .jj/repo is a file, read it to get the default workspace path
+  const repoStorePathContent = readFileSync(repoPath, "utf-8").trim();
+  // .jj/repo contains path to .jj/repo/store
+  // Go up two levels to get the default workspace root
+  return dirname(dirname(repoStorePathContent));
 }
 
 export function getWorkspacesDir(): string {
-  const repoRoot = getRepoRoot();
-  const parentDir = dirname(repoRoot);
-  const repoName = getRepoName();
+  const defaultPath = getDefaultWorkspacePath();
+  const parentDir = dirname(defaultPath);
+  const repoName = basename(defaultPath);
   return join(parentDir, `${repoName}-workspaces`);
 }
 
