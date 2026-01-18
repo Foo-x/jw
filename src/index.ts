@@ -1,13 +1,13 @@
 #!/usr/bin/env bun
 
 import {
-  newWorkspace,
-  listWorkspaces,
+  cleanWorkspaces,
+  copyToWorkspace,
   goWorkspace,
+  listWorkspaces,
+  newWorkspace,
   removeWorkspace,
   renameWorkspace,
-  copyToWorkspace,
-  cleanWorkspaces,
 } from "./workspace.ts";
 
 function showHelp(): void {

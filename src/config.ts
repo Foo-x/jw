@@ -1,5 +1,5 @@
-import { existsSync } from "fs";
-import { join } from "path";
+import { existsSync } from "node:fs";
+import { join } from "node:path";
 import { getDefaultWorkspacePath } from "./utils.ts";
 
 export interface Config {
@@ -68,6 +68,6 @@ export async function addWorkspace(name: string): Promise<void> {
 export async function removeWorkspace(name: string): Promise<void> {
   const config = await loadConfig();
 
-  config.workspaces = config.workspaces.filter(w => w !== name);
+  config.workspaces = config.workspaces.filter((w) => w !== name);
   await saveConfig(config);
 }

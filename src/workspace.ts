@@ -1,20 +1,20 @@
-import { existsSync } from "fs";
-import { join } from "path";
+import { existsSync } from "node:fs";
+import { join } from "node:path";
 import {
-  loadConfig,
-  saveConfig,
   addWorkspace as addWorkspaceToConfig,
+  loadConfig,
   removeWorkspace as removeWorkspaceFromConfig,
+  saveConfig,
 } from "./config.ts";
 import {
+  copyFileOrDir,
   execCommand,
-  getRepoRoot,
   getDefaultWorkspacePath,
+  getRepoRoot,
   getWorkspacePath,
   getWorkspacesDir,
-  copyFileOrDir,
-  removeDir,
   normalizeWorkspaceName,
+  removeDir,
 } from "./utils.ts";
 
 export async function newWorkspace(name: string): Promise<void> {
@@ -168,11 +168,7 @@ export async function renameWorkspace(oldName: string, newName: string): Promise
   console.log(`Renaming workspace "${normalizedOldName}" to "${normalizedNewName}"...`);
 
   // Rename workspace in jj (run from the target workspace directory)
-  const renameResult = await execCommand("jj", [
-    "workspace",
-    "rename",
-    normalizedNewName,
-  ], oldPath);
+  const renameResult = await execCommand("jj", ["workspace", "rename", normalizedNewName], oldPath);
 
   if (renameResult.exitCode !== 0) {
     console.error(`Failed to rename workspace: ${renameResult.stderr}`);
@@ -205,9 +201,7 @@ export async function cleanWorkspaces(): Promise<void> {
     return;
   }
 
-  config.workspaces = config.workspaces.filter(
-    (ws) => !removedWorkspaces.includes(ws)
-  );
+  config.workspaces = config.workspaces.filter((ws) => !removedWorkspaces.includes(ws));
 
   await saveConfig(config);
 

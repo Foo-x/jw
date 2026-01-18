@@ -1,5 +1,5 @@
-import { existsSync, statSync, readFileSync } from "fs";
-import { basename, dirname, resolve, join } from "path";
+import { existsSync, readFileSync, statSync } from "node:fs";
+import { basename, dirname, join } from "node:path";
 
 export async function execCommand(
   command: string,
