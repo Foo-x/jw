@@ -5,6 +5,7 @@ import {
   listWorkspaces,
   goWorkspace,
   removeWorkspace,
+  renameWorkspace,
   copyToWorkspace,
   cleanWorkspaces,
 } from "./workspace.ts";
@@ -18,6 +19,7 @@ Usage:
   jw list            List all workspaces
   jw go [name]       Output workspace path (defaults to "default")
   jw rm <name>       Remove a workspace
+  jw rename <old> <new>  Rename a workspace
   jw copy <name>     Copy files from default workspace to specified workspace
   jw clean           Remove non-existent workspaces from config
   jw help            Show this help
@@ -60,6 +62,15 @@ async function main() {
           process.exit(1);
         }
         await removeWorkspace(args[1]);
+        break;
+
+      case "rename":
+        if (args.length < 3) {
+          console.error("Error: Please specify old and new workspace names");
+          console.error("Usage: jw rename <old> <new>");
+          process.exit(1);
+        }
+        await renameWorkspace(args[1], args[2]);
         break;
 
       case "copy":

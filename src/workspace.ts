@@ -149,6 +149,46 @@ export async function copyToWorkspace(name: string): Promise<void> {
   console.log("Copy completed");
 }
 
+export async function renameWorkspace(oldName: string, newName: string): Promise<void> {
+  const normalizedOldName = normalizeWorkspaceName(oldName);
+  const normalizedNewName = normalizeWorkspaceName(newName);
+  const oldPath = getWorkspacePath(normalizedOldName);
+  const newPath = getWorkspacePath(normalizedNewName);
+
+  if (!existsSync(oldPath)) {
+    console.error(`Workspace "${normalizedOldName}" not found`);
+    process.exit(1);
+  }
+
+  if (existsSync(newPath)) {
+    console.error(`Workspace "${normalizedNewName}" already exists`);
+    process.exit(1);
+  }
+
+  console.log(`Renaming workspace "${normalizedOldName}" to "${normalizedNewName}"...`);
+
+  // Rename workspace in jj (run from the target workspace directory)
+  const renameResult = await execCommand("jj", [
+    "workspace",
+    "rename",
+    normalizedNewName,
+  ], oldPath);
+
+  if (renameResult.exitCode !== 0) {
+    console.error(`Failed to rename workspace: ${renameResult.stderr}`);
+    process.exit(1);
+  }
+
+  // Rename directory
+  await execCommand("mv", [oldPath, newPath]);
+
+  // Update config
+  await removeWorkspaceFromConfig(normalizedOldName);
+  await addWorkspaceToConfig(normalizedNewName);
+
+  console.log(`Renamed workspace "${normalizedOldName}" to "${normalizedNewName}"`);
+}
+
 export async function cleanWorkspaces(): Promise<void> {
   const config = await loadConfig();
   const removedWorkspaces: string[] = [];
