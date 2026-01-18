@@ -17,7 +17,7 @@ import {
   removeDir,
 } from "./utils.ts";
 
-export async function newWorkspace(name: string): Promise<void> {
+export async function newWorkspace(name: string, revision?: string): Promise<void> {
   const normalizedName = normalizeWorkspaceName(name);
   const workspacePath = getWorkspacePath(normalizedName);
 
@@ -33,13 +33,20 @@ export async function newWorkspace(name: string): Promise<void> {
 
   console.log(`Creating workspace "${normalizedName}"...`);
 
-  const result = await execCommand("jj", [
+  const jjArgs = [
     "workspace",
     "add",
     "--name",
     normalizedName,
-    workspacePath,
-  ]);
+  ];
+
+  if (revision) {
+    jjArgs.push("--revision", revision);
+  }
+
+  jjArgs.push(workspacePath);
+
+  const result = await execCommand("jj", jjArgs);
 
   if (result.exitCode !== 0) {
     console.error(`Failed to create workspace: ${result.stderr}`);

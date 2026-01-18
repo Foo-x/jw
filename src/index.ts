@@ -15,14 +15,14 @@ function showHelp(): void {
 jw - jujutsu workspace management CLI
 
 Usage:
-  jw new <name>      Create a new workspace
-  jw list            List all workspaces
-  jw go [name]       Output workspace path (defaults to "default")
-  jw rm <name>       Remove a workspace
-  jw rename <old> <new>  Rename a workspace
-  jw copy <name>     Copy files from default workspace to specified workspace
-  jw clean           Remove non-existent workspaces from config
-  jw help            Show this help
+  jw new <name> [-r <revision>]  Create a new workspace
+  jw list                        List all workspaces
+  jw go [name]                   Output workspace path (defaults to "default")
+  jw rm <name>                   Remove a workspace
+  jw rename <old> <new>          Rename a workspace
+  jw copy <name>                 Copy files from default workspace to specified workspace
+  jw clean                       Remove non-existent workspaces from config
+  jw help                        Show this help
 `);
 }
 
@@ -38,14 +38,26 @@ async function main() {
 
   try {
     switch (command) {
-      case "new":
-        if (args.length < 2) {
+      case "new": {
+        let name: string | undefined;
+        let revision: string | undefined;
+
+        for (let i = 1; i < args.length; i++) {
+          if (args[i] === "-r" || args[i] === "--revision") {
+            revision = args[++i];
+          } else if (!args[i].startsWith("-")) {
+            name = args[i];
+          }
+        }
+
+        if (!name) {
           console.error("Error: Please specify a workspace name");
-          console.error("Usage: jw new <name>");
+          console.error("Usage: jw new <name> [-r <revision>]");
           process.exit(1);
         }
-        await newWorkspace(args[1]);
+        await newWorkspace(name, revision);
         break;
+      }
 
       case "list":
         await listWorkspaces();
