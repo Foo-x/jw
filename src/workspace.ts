@@ -203,6 +203,14 @@ export async function cleanWorkspaces(): Promise<void> {
 
   config.workspaces = config.workspaces.filter((ws) => !removedWorkspaces.includes(ws));
 
+  // jj workspace forget を各削除対象ワークスペースに対して実行
+  for (const ws of removedWorkspaces) {
+    const result = await execCommand("jj", ["workspace", "forget", ws]);
+    if (result.exitCode !== 0) {
+      console.warn(`Failed to run jj workspace forget for "${ws}": ${result.stderr.trim()}`);
+    }
+  }
+
   await saveConfig(config);
 
   console.log("Removed workspaces:");
