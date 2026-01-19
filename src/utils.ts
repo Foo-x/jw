@@ -1,5 +1,6 @@
 import { existsSync, readFileSync, statSync } from "node:fs";
 import { basename, dirname, join } from "node:path";
+import { JJ_DIR, WORKSPACES_DIR_SUFFIX } from "./constants.ts";
 
 export async function execCommand(
   command: string,
@@ -23,7 +24,7 @@ export function getRepoRoot(): string {
   let currentDir = process.cwd();
 
   while (currentDir !== "/") {
-    if (existsSync(join(currentDir, ".jj"))) {
+    if (existsSync(join(currentDir, JJ_DIR))) {
       return currentDir;
     }
     currentDir = dirname(currentDir);
@@ -39,7 +40,7 @@ export function getRepoName(): string {
 
 export function getDefaultWorkspacePath(): string {
   const currentWorkspaceRoot = getRepoRoot();
-  const repoPath = join(currentWorkspaceRoot, ".jj", "repo");
+  const repoPath = join(currentWorkspaceRoot, JJ_DIR, "repo");
 
   if (!existsSync(repoPath)) {
     throw new Error("Could not find .jj/repo");
@@ -63,7 +64,7 @@ export function getWorkspacesDir(): string {
   const defaultPath = getDefaultWorkspacePath();
   const parentDir = dirname(defaultPath);
   const repoName = basename(defaultPath);
-  return join(parentDir, `${repoName}-workspaces`);
+  return join(parentDir, `${repoName}${WORKSPACES_DIR_SUFFIX}`);
 }
 
 export function getWorkspacePath(name: string): string {

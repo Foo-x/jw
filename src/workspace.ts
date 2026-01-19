@@ -6,6 +6,8 @@ import {
   removeWorkspace as removeWorkspaceFromConfig,
   saveConfig,
 } from "./config.ts";
+import { DEFAULT_WORKSPACE_NAME } from "./constants.ts";
+import { JujutsuCommandError, WorkspaceExistsError, WorkspaceNotFoundError } from "./errors.ts";
 import {
   copyFileOrDir,
   execCommand,
@@ -22,8 +24,7 @@ export async function newWorkspace(name: string, revision?: string): Promise<voi
   const workspacePath = getWorkspacePath(normalizedName);
 
   if (existsSync(workspacePath)) {
-    console.error(`Workspace "${normalizedName}" already exists`);
-    process.exit(1);
+    throw new WorkspaceExistsError(normalizedName);
   }
 
   const workspacesDir = getWorkspacesDir();
@@ -33,12 +34,7 @@ export async function newWorkspace(name: string, revision?: string): Promise<voi
 
   console.log(`Creating workspace "${normalizedName}"...`);
 
-  const jjArgs = [
-    "workspace",
-    "add",
-    "--name",
-    normalizedName,
-  ];
+  const jjArgs = ["workspace", "add", "--name", normalizedName];
 
   if (revision) {
     jjArgs.push("--revision", revision);
@@ -49,8 +45,7 @@ export async function newWorkspace(name: string, revision?: string): Promise<voi
   const result = await execCommand("jj", jjArgs);
 
   if (result.exitCode !== 0) {
-    console.error(`Failed to create workspace: ${result.stderr}`);
-    process.exit(1);
+    throw new JujutsuCommandError("create workspace", result.stderr);
   }
 
   const config = await loadConfig();
@@ -85,7 +80,7 @@ export async function listWorkspaces(): Promise<void> {
 
   console.log("Workspaces:");
   const defaultMark = currentPath === defaultPath ? "*" : " ";
-  console.log(`  ${defaultMark} ✓ default (${defaultPath})`);
+  console.log(`  ${defaultMark} ✓ ${DEFAULT_WORKSPACE_NAME} (${defaultPath})`);
 
   for (const ws of config.workspaces) {
     const path = getWorkspacePath(ws);
@@ -96,7 +91,7 @@ export async function listWorkspaces(): Promise<void> {
 }
 
 export async function goWorkspace(name: string): Promise<void> {
-  if (name === "default") {
+  if (name === DEFAULT_WORKSPACE_NAME) {
     console.log(getDefaultWorkspacePath());
     return;
   }
@@ -105,8 +100,7 @@ export async function goWorkspace(name: string): Promise<void> {
   const workspacePath = getWorkspacePath(normalizedName);
 
   if (!existsSync(workspacePath)) {
-    console.error(`Workspace "${normalizedName}" not found`);
-    process.exit(1);
+    throw new WorkspaceNotFoundError(normalizedName);
   }
 
   console.log(workspacePath);
@@ -138,8 +132,7 @@ export async function copyToWorkspace(name: string): Promise<void> {
   const workspacePath = getWorkspacePath(normalizedName);
 
   if (!existsSync(workspacePath)) {
-    console.error(`Workspace "${normalizedName}" not found`);
-    process.exit(1);
+    throw new WorkspaceNotFoundError(normalizedName);
   }
 
   const config = await loadConfig();
@@ -163,13 +156,11 @@ export async function renameWorkspace(oldName: string, newName: string): Promise
   const newPath = getWorkspacePath(normalizedNewName);
 
   if (!existsSync(oldPath)) {
-    console.error(`Workspace "${normalizedOldName}" not found`);
-    process.exit(1);
+    throw new WorkspaceNotFoundError(normalizedOldName);
   }
 
   if (existsSync(newPath)) {
-    console.error(`Workspace "${normalizedNewName}" already exists`);
-    process.exit(1);
+    throw new WorkspaceExistsError(normalizedNewName);
   }
 
   console.log(`Renaming workspace "${normalizedOldName}" to "${normalizedNewName}"...`);
@@ -178,8 +169,7 @@ export async function renameWorkspace(oldName: string, newName: string): Promise
   const renameResult = await execCommand("jj", ["workspace", "rename", normalizedNewName], oldPath);
 
   if (renameResult.exitCode !== 0) {
-    console.error(`Failed to rename workspace: ${renameResult.stderr}`);
-    process.exit(1);
+    throw new JujutsuCommandError("rename workspace", renameResult.stderr);
   }
 
   // Rename directory
@@ -210,7 +200,7 @@ export async function cleanWorkspaces(): Promise<void> {
 
   config.workspaces = config.workspaces.filter((ws) => !removedWorkspaces.includes(ws));
 
-  // jj workspace forget を各削除対象ワークスペースに対して実行
+  // Run jj workspace forget for each workspace to be removed
   for (const ws of removedWorkspaces) {
     const result = await execCommand("jj", ["workspace", "forget", ws]);
     if (result.exitCode !== 0) {

@@ -1,5 +1,7 @@
 #!/usr/bin/env bun
 
+import { DEFAULT_WORKSPACE_NAME, SUPPORTED_SHELLS } from "./constants.ts";
+import { JwError, ValidationError } from "./errors.ts";
 import {
   cleanWorkspaces,
   copyToWorkspace,
@@ -25,6 +27,16 @@ Usage:
   jw completion <shell>          Generate completion script for the specified shell
   jw help                        Show this help
 `);
+}
+
+function requireArg(
+  value: string | undefined,
+  argName: string,
+  usage: string
+): asserts value is string {
+  if (!value) {
+    throw new ValidationError(`Please specify a ${argName}\nUsage: ${usage}`);
+  }
 }
 
 function generateBashCompletion(): void {
@@ -74,7 +86,7 @@ function generateBashCompletion(): void {
 }
 
 complete -F _jw_completion jw
-`)
+`);
 }
 
 async function main() {
@@ -101,11 +113,7 @@ async function main() {
           }
         }
 
-        if (!name) {
-          console.error("Error: Please specify a workspace name");
-          console.error("Usage: jw new <name> [-r <revision>]");
-          process.exit(1);
-        }
+        requireArg(name, "workspace name", "jw new <name> [-r <revision>]");
         await newWorkspace(name, revision);
         break;
       }
@@ -115,33 +123,22 @@ async function main() {
         break;
 
       case "go":
-        await goWorkspace(args[1] || "default");
+        await goWorkspace(args[1] || DEFAULT_WORKSPACE_NAME);
         break;
 
       case "rm":
-        if (args.length < 2) {
-          console.error("Error: Please specify a workspace name");
-          console.error("Usage: jw rm <name>");
-          process.exit(1);
-        }
+        requireArg(args[1], "workspace name", "jw rm <name>");
         await removeWorkspace(args[1]);
         break;
 
       case "rename":
-        if (args.length < 3) {
-          console.error("Error: Please specify old and new workspace names");
-          console.error("Usage: jw rename <old> <new>");
-          process.exit(1);
-        }
+        requireArg(args[1], "old workspace name", "jw rename <old> <new>");
+        requireArg(args[2], "new workspace name", "jw rename <old> <new>");
         await renameWorkspace(args[1], args[2]);
         break;
 
       case "copy":
-        if (args.length < 2) {
-          console.error("Error: Please specify a workspace name");
-          console.error("Usage: jw copy <name>");
-          process.exit(1);
-        }
+        requireArg(args[1], "workspace name", "jw copy <name>");
         await copyToWorkspace(args[1]);
         break;
 
@@ -150,18 +147,15 @@ async function main() {
         break;
 
       case "completion":
-        if (args.length < 2) {
-          console.error("Error: Please specify a shell");
-          console.error("Usage: jw completion <shell>");
-          console.error("Supported shells: bash");
-          process.exit(1);
-        }
-        if (args[1] === "bash") {
-          generateBashCompletion();
+        requireArg(args[1], "shell", "jw completion <shell>");
+        if (SUPPORTED_SHELLS.includes(args[1] as (typeof SUPPORTED_SHELLS)[number])) {
+          if (args[1] === "bash") {
+            generateBashCompletion();
+          }
         } else {
-          console.error(`Error: Unsupported shell "${args[1]}"`);
-          console.error("Supported shells: bash");
-          process.exit(1);
+          throw new ValidationError(
+            `Unsupported shell "${args[1]}"\nSupported shells: ${SUPPORTED_SHELLS.join(", ")}`
+          );
         }
         break;
 
@@ -172,12 +166,14 @@ async function main() {
         break;
 
       default:
-        console.error(`Error: Unknown command "${command}"`);
-        showHelp();
-        process.exit(1);
+        throw new ValidationError(`Unknown command "${command}"`);
     }
   } catch (error) {
-    console.error(`Error: ${error}`);
+    if (error instanceof JwError) {
+      console.error(`Error: ${error.message}`);
+    } else {
+      console.error(`Unexpected error: ${error}`);
+    }
     process.exit(1);
   }
 }
