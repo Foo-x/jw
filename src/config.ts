@@ -1,5 +1,6 @@
 import { existsSync } from "node:fs";
 import { join } from "node:path";
+import { CONFIG_FILE_NAME } from "./constants.ts";
 import { getDefaultWorkspacePath } from "./utils.ts";
 
 export interface Config {
@@ -7,8 +8,6 @@ export interface Config {
   copyFiles: string[];
   postCreateCommands: string[];
 }
-
-const CONFIG_FILE_NAME = ".jwconfig";
 
 function getConfigPath(): string {
   return join(getDefaultWorkspacePath(), CONFIG_FILE_NAME);
@@ -22,6 +21,28 @@ export function getDefaultConfig(): Config {
   };
 }
 
+function isStringArray(value: unknown): value is string[] {
+  return Array.isArray(value) && value.every((v) => typeof v === "string");
+}
+
+export function parseConfig(data: unknown): Config {
+  const defaults = getDefaultConfig();
+
+  if (typeof data !== "object" || data === null) {
+    return defaults;
+  }
+
+  const obj = data as Record<string, unknown>;
+
+  return {
+    workspaces: isStringArray(obj.workspaces) ? obj.workspaces : defaults.workspaces,
+    copyFiles: isStringArray(obj.copyFiles) ? obj.copyFiles : defaults.copyFiles,
+    postCreateCommands: isStringArray(obj.postCreateCommands)
+      ? obj.postCreateCommands
+      : defaults.postCreateCommands,
+  };
+}
+
 export async function loadConfig(): Promise<Config> {
   const configPath = getConfigPath();
 
@@ -32,13 +53,9 @@ export async function loadConfig(): Promise<Config> {
   try {
     const file = Bun.file(configPath);
     const content = await file.text();
-    const config = JSON.parse(content) as Config;
+    const data = JSON.parse(content);
 
-    return {
-      workspaces: config.workspaces || [],
-      copyFiles: config.copyFiles || [],
-      postCreateCommands: config.postCreateCommands || [],
-    };
+    return parseConfig(data);
   } catch (error) {
     console.error(`Failed to load config file: ${error}`);
     return getDefaultConfig();
