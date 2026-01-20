@@ -78,7 +78,6 @@ export async function listWorkspaces(): Promise<void> {
   const defaultPath = getDefaultWorkspacePath();
   const currentPath = getRepoRoot();
 
-  console.log("Workspaces:");
   const defaultMark = currentPath === defaultPath ? "*" : " ";
   console.log(`  ${defaultMark} ✓ ${DEFAULT_WORKSPACE_NAME} (${defaultPath})`);
 
