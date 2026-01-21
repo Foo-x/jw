@@ -7,7 +7,7 @@ import {
   saveConfig,
 } from "./config.ts";
 import { DEFAULT_WORKSPACE_NAME } from "./constants.ts";
-import { JujutsuCommandError, WorkspaceExistsError, WorkspaceNotFoundError } from "./errors.ts";
+import { CannotRemoveDefaultWorkspaceError, JujutsuCommandError, WorkspaceExistsError, WorkspaceNotFoundError } from "./errors.ts";
 import {
   copyFileOrDir,
   execCommand,
@@ -107,6 +107,12 @@ export async function goWorkspace(name: string): Promise<void> {
 
 export async function removeWorkspace(name: string): Promise<void> {
   const normalizedName = normalizeWorkspaceName(name);
+
+  // デフォルトワークスペースの削除を禁止
+  if (normalizedName === DEFAULT_WORKSPACE_NAME) {
+    throw new CannotRemoveDefaultWorkspaceError();
+  }
+
   const workspacePath = getWorkspacePath(normalizedName);
 
   console.log(`Removing workspace "${normalizedName}"...`);

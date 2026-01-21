@@ -32,3 +32,10 @@ export class ValidationError extends JwError {
     this.name = "ValidationError";
   }
 }
+
+export class CannotRemoveDefaultWorkspaceError extends JwError {
+  constructor() {
+    super("Cannot remove the default workspace");
+    this.name = "CannotRemoveDefaultWorkspaceError";
+  }
+}
