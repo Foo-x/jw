@@ -1,6 +1,7 @@
 import { existsSync, readFileSync, statSync } from "node:fs";
 import { basename, dirname, join } from "node:path";
 import { JJ_DIR, WORKSPACES_DIR_SUFFIX } from "./constants.ts";
+import { NotJujutsuRepositoryError } from "./errors.ts";
 
 export async function execCommand(
   command: string,
@@ -30,7 +31,7 @@ export function getRepoRoot(): string {
     currentDir = dirname(currentDir);
   }
 
-  throw new Error("Could not find jujutsu repository root");
+  throw new NotJujutsuRepositoryError();
 }
 
 export function getRepoName(): string {

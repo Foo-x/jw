@@ -1,6 +1,7 @@
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { CONFIG_FILE_NAME } from "./constants.ts";
+import { ConfigAlreadyExistsError } from "./errors.ts";
 import { getDefaultWorkspacePath } from "./utils.ts";
 
 export interface Config {
@@ -9,7 +10,7 @@ export interface Config {
   postCreateCommands: string[];
 }
 
-function getConfigPath(): string {
+export function getConfigPath(): string {
   return join(getDefaultWorkspacePath(), CONFIG_FILE_NAME);
 }
 
@@ -87,4 +88,15 @@ export async function removeWorkspace(name: string): Promise<void> {
 
   config.workspaces = config.workspaces.filter((w) => w !== name);
   await saveConfig(config);
+}
+
+export async function initConfig(): Promise<void> {
+  const configPath = getConfigPath();
+
+  if (existsSync(configPath)) {
+    throw new ConfigAlreadyExistsError(configPath);
+  }
+
+  const defaultConfig = getDefaultConfig();
+  await Bun.write(configPath, JSON.stringify(defaultConfig, null, 2));
 }

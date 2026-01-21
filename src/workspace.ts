@@ -2,6 +2,8 @@ import { existsSync } from "node:fs";
 import { join } from "node:path";
 import {
   addWorkspace as addWorkspaceToConfig,
+  getConfigPath,
+  initConfig,
   loadConfig,
   removeWorkspace as removeWorkspaceFromConfig,
   saveConfig,
@@ -219,4 +221,15 @@ export async function cleanWorkspaces(): Promise<void> {
   for (const ws of removedWorkspaces) {
     console.log(`  ${ws}`);
   }
+}
+
+export async function initWorkspace(): Promise<void> {
+  // getRepoRoot() will throw NotJujutsuRepositoryError if not in a jj repo
+  getRepoRoot();
+
+  // initConfig() will throw ConfigAlreadyExistsError if config already exists
+  await initConfig();
+
+  const configPath = getConfigPath();
+  console.log(`Initialized jw config: ${configPath}`);
 }

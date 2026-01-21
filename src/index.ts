@@ -6,6 +6,7 @@ import {
   cleanWorkspaces,
   copyToWorkspace,
   goWorkspace,
+  initWorkspace,
   listWorkspaces,
   newWorkspace,
   removeWorkspace,
@@ -17,6 +18,7 @@ function showHelp(): void {
 jw - jujutsu workspace management CLI
 
 Usage:
+  jw init                        Initialize jw config file in the repository root
   jw new <name> [-r <revision>]  Create a new workspace
   jw list                        List all workspaces
   jw go [name]                   Output workspace path (defaults to "default")
@@ -44,7 +46,7 @@ function generateBashCompletion(): void {
     local cur prev words cword
     _init_completion || return
 
-    local subcommands="new list go rm rename copy clean completion help"
+    local subcommands="init new list go rm rename copy clean completion help"
 
     # Handle subcommand completion
     if [[ $cword -eq 1 ]]; then
@@ -108,6 +110,10 @@ async function main() {
 
   try {
     switch (command) {
+      case "init":
+        await initWorkspace();
+        break;
+
       case "new": {
         let name: string | undefined;
         let revision: string | undefined;

@@ -39,3 +39,17 @@ export class CannotRemoveDefaultWorkspaceError extends JwError {
     this.name = "CannotRemoveDefaultWorkspaceError";
   }
 }
+
+export class NotJujutsuRepositoryError extends JwError {
+  constructor() {
+    super("Not a jujutsu repository (or any of the parent directories)");
+    this.name = "NotJujutsuRepositoryError";
+  }
+}
+
+export class ConfigAlreadyExistsError extends JwError {
+  constructor(path: string) {
+    super(`Config file already exists: ${path}`);
+    this.name = "ConfigAlreadyExistsError";
+  }
+}
