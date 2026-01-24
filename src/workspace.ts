@@ -81,13 +81,13 @@ export async function listWorkspaces(): Promise<void> {
   const currentPath = getRepoRoot();
 
   const defaultMark = currentPath === defaultPath ? "*" : " ";
-  console.log(`  ${defaultMark} ✓ ${DEFAULT_WORKSPACE_NAME} (${defaultPath})`);
+  console.log(`${defaultMark} ${DEFAULT_WORKSPACE_NAME} (${defaultPath})`);
 
   for (const ws of config.workspaces) {
     const path = getWorkspacePath(ws);
-    const exists = existsSync(path) ? "✓" : "✗";
+    const pathInfo = existsSync(path) ? `(${path})` : "✗";
     const mark = currentPath === path ? "*" : " ";
-    console.log(`  ${mark} ${exists} ${ws} (${path})`);
+    console.log(`${mark} ${ws} ${pathInfo}`);
   }
 }
 
