@@ -1,7 +1,7 @@
 import { existsSync, readFileSync, statSync } from "node:fs";
 import { basename, dirname, join } from "node:path";
 import { JJ_DIR, WORKSPACES_DIR_SUFFIX } from "./constants.ts";
-import { NotJujutsuRepositoryError } from "./errors.ts";
+import { JujutsuCommandError, NotJujutsuRepositoryError } from "./errors.ts";
 
 export async function execCommand(
   command: string,
@@ -95,4 +95,31 @@ export async function removeDir(path: string): Promise<void> {
 
 export function normalizeWorkspaceName(name: string): string {
   return name.replace(/\//g, "-");
+}
+
+/**
+ * jj workspace listの出力をパースしてworkspace名の配列を返す
+ * 出力形式: "workspace_name: change_id commit_id ..."
+ */
+export function parseJjWorkspaceList(output: string): string[] {
+  if (!output.trim()) return [];
+  return output
+    .trim()
+    .split("\n")
+    .map((line) => {
+      const colonIndex = line.indexOf(":");
+      return colonIndex > 0 ? line.substring(0, colonIndex).trim() : null;
+    })
+    .filter((name): name is string => name !== null);
+}
+
+/**
+ * jj workspace listを実行してworkspace名の配列を取得する
+ */
+export async function getJjWorkspaceList(): Promise<string[]> {
+  const result = await execCommand("jj", ["workspace", "list"]);
+  if (result.exitCode !== 0) {
+    throw new JujutsuCommandError("list workspaces", result.stderr);
+  }
+  return parseJjWorkspaceList(result.stdout);
 }

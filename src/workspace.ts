@@ -1,19 +1,18 @@
 import { existsSync } from "node:fs";
 import { join } from "node:path";
-import {
-  addWorkspace as addWorkspaceToConfig,
-  getConfigPath,
-  initConfig,
-  loadConfig,
-  removeWorkspace as removeWorkspaceFromConfig,
-  saveConfig,
-} from "./config.ts";
+import { getConfigPath, initConfig, loadConfig } from "./config.ts";
 import { DEFAULT_WORKSPACE_NAME } from "./constants.ts";
-import { CannotRemoveDefaultWorkspaceError, JujutsuCommandError, WorkspaceExistsError, WorkspaceNotFoundError } from "./errors.ts";
+import {
+  CannotRemoveDefaultWorkspaceError,
+  JujutsuCommandError,
+  WorkspaceExistsError,
+  WorkspaceNotFoundError,
+} from "./errors.ts";
 import {
   copyFileOrDir,
   execCommand,
   getDefaultWorkspacePath,
+  getJjWorkspaceList,
   getRepoRoot,
   getWorkspacePath,
   getWorkspacesDir,
@@ -70,22 +69,23 @@ export async function newWorkspace(name: string, revision?: string): Promise<voi
     }
   }
 
-  await addWorkspaceToConfig(normalizedName);
-
   console.log(`Created workspace "${normalizedName}": ${workspacePath}`);
 }
 
 export async function listWorkspaces(): Promise<void> {
-  const config = await loadConfig();
+  const jjWorkspaces = await getJjWorkspaceList();
   const defaultPath = getDefaultWorkspacePath();
   const currentPath = getRepoRoot();
+
+  const otherWorkspaces = jjWorkspaces.filter((ws) => ws !== DEFAULT_WORKSPACE_NAME);
 
   const defaultMark = currentPath === defaultPath ? "*" : " ";
   console.log(`${defaultMark} ${DEFAULT_WORKSPACE_NAME} (${defaultPath})`);
 
-  for (const ws of config.workspaces) {
+  for (const ws of otherWorkspaces) {
     const path = getWorkspacePath(ws);
-    const pathInfo = existsSync(path) ? `(${path})` : "✗";
+    const exists = existsSync(path);
+    const pathInfo = exists ? `(${path})` : "✗";
     const mark = currentPath === path ? "*" : " ";
     console.log(`${mark} ${ws} ${pathInfo}`);
   }
@@ -128,8 +128,6 @@ export async function removeWorkspace(name: string): Promise<void> {
   if (existsSync(workspacePath)) {
     await removeDir(workspacePath);
   }
-
-  await removeWorkspaceFromConfig(normalizedName);
 
   console.log(`Removed workspace "${normalizedName}"`);
 }
@@ -182,43 +180,34 @@ export async function renameWorkspace(oldName: string, newName: string): Promise
   // Rename directory
   await execCommand("mv", [oldPath, newPath]);
 
-  // Update config
-  await removeWorkspaceFromConfig(normalizedOldName);
-  await addWorkspaceToConfig(normalizedNewName);
-
   console.log(`Renamed workspace "${normalizedOldName}" to "${normalizedNewName}"`);
 }
 
 export async function cleanWorkspaces(): Promise<void> {
-  const config = await loadConfig();
-  const removedWorkspaces: string[] = [];
+  const workspaces = await getJjWorkspaceList();
+  const forgottenWorkspaces: string[] = [];
 
-  for (const ws of config.workspaces) {
+  for (const ws of workspaces) {
+    if (ws === DEFAULT_WORKSPACE_NAME) continue;
+
     const path = getWorkspacePath(ws);
     if (!existsSync(path)) {
-      removedWorkspaces.push(ws);
+      const result = await execCommand("jj", ["workspace", "forget", ws]);
+      if (result.exitCode === 0) {
+        forgottenWorkspaces.push(ws);
+      } else {
+        console.warn(`Failed to forget workspace "${ws}": ${result.stderr.trim()}`);
+      }
     }
   }
 
-  if (removedWorkspaces.length === 0) {
-    console.log("No workspaces to remove");
+  if (forgottenWorkspaces.length === 0) {
+    console.log("No stale workspaces found");
     return;
   }
 
-  config.workspaces = config.workspaces.filter((ws) => !removedWorkspaces.includes(ws));
-
-  // Run jj workspace forget for each workspace to be removed
-  for (const ws of removedWorkspaces) {
-    const result = await execCommand("jj", ["workspace", "forget", ws]);
-    if (result.exitCode !== 0) {
-      console.warn(`Failed to run jj workspace forget for "${ws}": ${result.stderr.trim()}`);
-    }
-  }
-
-  await saveConfig(config);
-
-  console.log("Removed workspaces:");
-  for (const ws of removedWorkspaces) {
+  console.log("Forgotten workspaces:");
+  for (const ws of forgottenWorkspaces) {
     console.log(`  ${ws}`);
   }
 }

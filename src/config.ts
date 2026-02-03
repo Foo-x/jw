@@ -5,7 +5,6 @@ import { ConfigAlreadyExistsError } from "./errors.ts";
 import { getDefaultWorkspacePath } from "./utils.ts";
 
 export interface Config {
-  workspaces: string[];
   copyFiles: string[];
   postCreateCommands: string[];
 }
@@ -16,7 +15,6 @@ export function getConfigPath(): string {
 
 export function getDefaultConfig(): Config {
   return {
-    workspaces: [],
     copyFiles: [],
     postCreateCommands: [],
   };
@@ -36,7 +34,6 @@ export function parseConfig(data: unknown): Config {
   const obj = data as Record<string, unknown>;
 
   return {
-    workspaces: isStringArray(obj.workspaces) ? obj.workspaces : defaults.workspaces,
     copyFiles: isStringArray(obj.copyFiles) ? obj.copyFiles : defaults.copyFiles,
     postCreateCommands: isStringArray(obj.postCreateCommands)
       ? obj.postCreateCommands
@@ -72,22 +69,6 @@ export async function saveConfig(config: Config): Promise<void> {
     console.error(`Failed to save config file: ${error}`);
     throw error;
   }
-}
-
-export async function addWorkspace(name: string): Promise<void> {
-  const config = await loadConfig();
-
-  if (!config.workspaces.includes(name)) {
-    config.workspaces.push(name);
-    await saveConfig(config);
-  }
-}
-
-export async function removeWorkspace(name: string): Promise<void> {
-  const config = await loadConfig();
-
-  config.workspaces = config.workspaces.filter((w) => w !== name);
-  await saveConfig(config);
 }
 
 export async function initConfig(): Promise<void> {

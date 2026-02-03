@@ -66,21 +66,21 @@ function generateBashCompletion(): void {
         go|copy)
             if [[ $cword -eq 2 ]]; then
                 local workspaces
-                workspaces=$(jw list 2>/dev/null | command grep -E "^  [* ] [✓✗]" | awk '{if ($1 == "*") print $3; else print $2}')
+                workspaces=$(jj workspace list 2>/dev/null | cut -d: -f1)
                 COMPREPLY=($(compgen -W "$workspaces" -- "$cur"))
             fi
             ;;
         rm)
             if [[ $cword -eq 2 ]]; then
                 local workspaces
-                workspaces=$(jw list 2>/dev/null | command grep -E "^  [* ] [✓✗]" | awk '{if ($1 == "*") print $3; else print $2}' | command grep -v "^default$")
+                workspaces=$(jj workspace list 2>/dev/null | cut -d: -f1 | command grep -v "^default$")
                 COMPREPLY=($(compgen -W "$workspaces" -- "$cur"))
             fi
             ;;
         rename)
             if [[ $cword -eq 2 ]]; then
                 local workspaces
-                workspaces=$(jw list 2>/dev/null | command grep -E "^  [* ] [✓✗]" | awk '{if ($1 == "*") print $3; else print $2}')
+                workspaces=$(jj workspace list 2>/dev/null | cut -d: -f1)
                 COMPREPLY=($(compgen -W "$workspaces" -- "$cur"))
             fi
             ;;
