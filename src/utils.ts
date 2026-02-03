@@ -61,15 +61,19 @@ export function getDefaultWorkspacePath(): string {
   return dirname(dirname(repoStorePathContent));
 }
 
-export function getWorkspacesDir(): string {
+export function getWorkspacesDirName(repoName: string, suffix: string | undefined): string {
+  return `${repoName}${suffix ?? WORKSPACES_DIR_SUFFIX}`;
+}
+
+export function getWorkspacesDir(configSuffix?: string): string {
   const defaultPath = getDefaultWorkspacePath();
   const parentDir = dirname(defaultPath);
   const repoName = basename(defaultPath);
-  return join(parentDir, `${repoName}${WORKSPACES_DIR_SUFFIX}`);
+  return join(parentDir, getWorkspacesDirName(repoName, configSuffix));
 }
 
-export function getWorkspacePath(name: string): string {
-  return join(getWorkspacesDir(), name);
+export function getWorkspacePath(name: string, configSuffix?: string): string {
+  return join(getWorkspacesDir(configSuffix), name);
 }
 
 export async function copyFileOrDir(src: string, dest: string): Promise<void> {

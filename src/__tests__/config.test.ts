@@ -57,3 +57,40 @@ describe("parseConfig", () => {
     });
   });
 });
+
+describe("parseConfig - workspacesDirSuffix", () => {
+  test("parses valid workspacesDirSuffix string", () => {
+    const result = parseConfig({ workspacesDirSuffix: "-ws" });
+    expect(result.workspacesDirSuffix).toBe("-ws");
+  });
+
+  test("parses another valid workspacesDirSuffix string", () => {
+    const result = parseConfig({ workspacesDirSuffix: "_workspaces" });
+    expect(result.workspacesDirSuffix).toBe("_workspaces");
+  });
+
+  test("returns undefined workspacesDirSuffix when not set", () => {
+    const result = parseConfig({});
+    expect(result.workspacesDirSuffix).toBeUndefined();
+  });
+
+  test("returns undefined workspacesDirSuffix when null", () => {
+    const result = parseConfig({ workspacesDirSuffix: null });
+    expect(result.workspacesDirSuffix).toBeUndefined();
+  });
+
+  test("returns undefined workspacesDirSuffix when number", () => {
+    const result = parseConfig({ workspacesDirSuffix: 123 });
+    expect(result.workspacesDirSuffix).toBeUndefined();
+  });
+
+  test("returns undefined workspacesDirSuffix when array", () => {
+    const result = parseConfig({ workspacesDirSuffix: ["a"] });
+    expect(result.workspacesDirSuffix).toBeUndefined();
+  });
+
+  test("returns undefined workspacesDirSuffix when empty string", () => {
+    const result = parseConfig({ workspacesDirSuffix: "" });
+    expect(result.workspacesDirSuffix).toBeUndefined();
+  });
+});

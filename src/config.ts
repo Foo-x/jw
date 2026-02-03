@@ -7,6 +7,7 @@ import { getDefaultWorkspacePath } from "./utils.ts";
 export interface Config {
   copyFiles: string[];
   postCreateCommands: string[];
+  workspacesDirSuffix?: string;
 }
 
 export function getConfigPath(): string {
@@ -33,11 +34,17 @@ export function parseConfig(data: unknown): Config {
 
   const obj = data as Record<string, unknown>;
 
+  const workspacesDirSuffix =
+    typeof obj.workspacesDirSuffix === "string" && obj.workspacesDirSuffix !== ""
+      ? obj.workspacesDirSuffix
+      : undefined;
+
   return {
     copyFiles: isStringArray(obj.copyFiles) ? obj.copyFiles : defaults.copyFiles,
     postCreateCommands: isStringArray(obj.postCreateCommands)
       ? obj.postCreateCommands
       : defaults.postCreateCommands,
+    ...(workspacesDirSuffix !== undefined && { workspacesDirSuffix }),
   };
 }
 

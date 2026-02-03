@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { normalizeWorkspaceName } from "../utils.ts";
+import { getWorkspacesDirName, normalizeWorkspaceName } from "../utils.ts";
 
 describe("normalizeWorkspaceName", () => {
   test("replaces forward slashes with hyphens", () => {
@@ -20,5 +20,19 @@ describe("normalizeWorkspaceName", () => {
 
   test("handles string with only slashes", () => {
     expect(normalizeWorkspaceName("///")).toBe("---");
+  });
+});
+
+describe("getWorkspacesDirName", () => {
+  test("uses provided suffix when valid string", () => {
+    expect(getWorkspacesDirName("my-repo", "-ws")).toBe("my-repo-ws");
+  });
+
+  test("uses default suffix when undefined", () => {
+    expect(getWorkspacesDirName("my-repo", undefined)).toBe("my-repo-workspaces");
+  });
+
+  test("uses provided suffix with underscore", () => {
+    expect(getWorkspacesDirName("my-repo", "_workspaces")).toBe("my-repo_workspaces");
   });
 });

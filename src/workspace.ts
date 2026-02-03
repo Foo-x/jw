@@ -1,6 +1,6 @@
 import { existsSync } from "node:fs";
 import { join } from "node:path";
-import { getConfigPath, initConfig, loadConfig } from "./config.ts";
+import { type Config, getConfigPath, initConfig, loadConfig } from "./config.ts";
 import { DEFAULT_WORKSPACE_NAME } from "./constants.ts";
 import {
   CannotRemoveDefaultWorkspaceError,
@@ -20,15 +20,25 @@ import {
   removeDir,
 } from "./utils.ts";
 
-export async function newWorkspace(name: string, revision?: string): Promise<void> {
+async function resolveWorkspace(name: string): Promise<{
+  config: Config;
+  normalizedName: string;
+  workspacePath: string;
+}> {
+  const config = await loadConfig();
   const normalizedName = normalizeWorkspaceName(name);
-  const workspacePath = getWorkspacePath(normalizedName);
+  const workspacePath = getWorkspacePath(normalizedName, config.workspacesDirSuffix);
+  return { config, normalizedName, workspacePath };
+}
+
+export async function newWorkspace(name: string, revision?: string): Promise<void> {
+  const { config, normalizedName, workspacePath } = await resolveWorkspace(name);
 
   if (existsSync(workspacePath)) {
     throw new WorkspaceExistsError(normalizedName);
   }
 
-  const workspacesDir = getWorkspacesDir();
+  const workspacesDir = getWorkspacesDir(config.workspacesDirSuffix);
   if (!existsSync(workspacesDir)) {
     await execCommand("mkdir", ["-p", workspacesDir]);
   }
@@ -49,7 +59,6 @@ export async function newWorkspace(name: string, revision?: string): Promise<voi
     throw new JujutsuCommandError("create workspace", result.stderr);
   }
 
-  const config = await loadConfig();
   const repoRoot = getRepoRoot();
 
   for (const file of config.copyFiles) {
@@ -83,7 +92,7 @@ export async function listWorkspaces(): Promise<void> {
   console.log(`${defaultMark} ${DEFAULT_WORKSPACE_NAME} (${defaultPath})`);
 
   for (const ws of otherWorkspaces) {
-    const path = getWorkspacePath(ws);
+    const { workspacePath: path } = await resolveWorkspace(ws);
     const exists = existsSync(path);
     const pathInfo = exists ? `(${path})` : "✗";
     const mark = currentPath === path ? "*" : " ";
@@ -97,8 +106,7 @@ export async function goWorkspace(name: string): Promise<void> {
     return;
   }
 
-  const normalizedName = normalizeWorkspaceName(name);
-  const workspacePath = getWorkspacePath(normalizedName);
+  const { normalizedName, workspacePath } = await resolveWorkspace(name);
 
   if (!existsSync(workspacePath)) {
     throw new WorkspaceNotFoundError(normalizedName);
@@ -108,14 +116,12 @@ export async function goWorkspace(name: string): Promise<void> {
 }
 
 export async function removeWorkspace(name: string): Promise<void> {
-  const normalizedName = normalizeWorkspaceName(name);
+  const { normalizedName, workspacePath } = await resolveWorkspace(name);
 
   // デフォルトワークスペースの削除を禁止
   if (normalizedName === DEFAULT_WORKSPACE_NAME) {
     throw new CannotRemoveDefaultWorkspaceError();
   }
-
-  const workspacePath = getWorkspacePath(normalizedName);
 
   console.log(`Removing workspace "${normalizedName}"...`);
 
@@ -133,14 +139,12 @@ export async function removeWorkspace(name: string): Promise<void> {
 }
 
 export async function copyToWorkspace(name: string): Promise<void> {
-  const normalizedName = normalizeWorkspaceName(name);
-  const workspacePath = getWorkspacePath(normalizedName);
+  const { config, normalizedName, workspacePath } = await resolveWorkspace(name);
 
   if (!existsSync(workspacePath)) {
     throw new WorkspaceNotFoundError(normalizedName);
   }
 
-  const config = await loadConfig();
   const repoRoot = getRepoRoot();
 
   console.log(`Copying files to workspace "${normalizedName}"...`);
@@ -155,10 +159,10 @@ export async function copyToWorkspace(name: string): Promise<void> {
 }
 
 export async function renameWorkspace(oldName: string, newName: string): Promise<void> {
-  const normalizedOldName = normalizeWorkspaceName(oldName);
-  const normalizedNewName = normalizeWorkspaceName(newName);
-  const oldPath = getWorkspacePath(normalizedOldName);
-  const newPath = getWorkspacePath(normalizedNewName);
+  const { normalizedName: normalizedOldName, workspacePath: oldPath } =
+    await resolveWorkspace(oldName);
+  const { normalizedName: normalizedNewName, workspacePath: newPath } =
+    await resolveWorkspace(newName);
 
   if (!existsSync(oldPath)) {
     throw new WorkspaceNotFoundError(normalizedOldName);
@@ -190,7 +194,7 @@ export async function cleanWorkspaces(): Promise<void> {
   for (const ws of workspaces) {
     if (ws === DEFAULT_WORKSPACE_NAME) continue;
 
-    const path = getWorkspacePath(ws);
+    const { workspacePath: path } = await resolveWorkspace(ws);
     if (!existsSync(path)) {
       const result = await execCommand("jj", ["workspace", "forget", ws]);
       if (result.exitCode === 0) {
