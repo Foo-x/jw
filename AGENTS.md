@@ -55,7 +55,6 @@ constants.ts    → App-wide constants (file names, default values, etc.).
 
 ## Tests
 
-Only pure functions are unit-tested (`parseConfig`, `normalizeWorkspaceName`, `getWorkspacesDirName`).
 Tests live in `src/__tests__/` and use `bun:test`.
 Workspace operations require a jj repository and are not covered by automated tests.
 

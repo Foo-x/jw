@@ -31,6 +31,22 @@ async function resolveWorkspace(name: string): Promise<{
   return { config, normalizedName, workspacePath };
 }
 
+export function formatDefaultWorkspaceLine(defaultPath: string, currentPath: string): string {
+  const defaultMark = currentPath === defaultPath ? "*" : " ";
+  return `${defaultMark} ${DEFAULT_WORKSPACE_NAME} (${defaultPath})`;
+}
+
+export function formatWorkspaceLine(
+  name: string,
+  workspacePath: string,
+  currentPath: string,
+  exists: boolean
+): string {
+  const pathInfo = exists ? `(${workspacePath})` : "✗";
+  const mark = currentPath === workspacePath ? "*" : " ";
+  return `${mark} ${name} ${pathInfo}`;
+}
+
 export async function newWorkspace(name: string, revision?: string): Promise<void> {
   const { config, normalizedName, workspacePath } = await resolveWorkspace(name);
 
@@ -88,15 +104,12 @@ export async function listWorkspaces(): Promise<void> {
 
   const otherWorkspaces = jjWorkspaces.filter((ws) => ws !== DEFAULT_WORKSPACE_NAME);
 
-  const defaultMark = currentPath === defaultPath ? "*" : " ";
-  console.log(`${defaultMark} ${DEFAULT_WORKSPACE_NAME} (${defaultPath})`);
+  console.log(formatDefaultWorkspaceLine(defaultPath, currentPath));
 
   for (const ws of otherWorkspaces) {
     const { workspacePath: path } = await resolveWorkspace(ws);
     const exists = existsSync(path);
-    const pathInfo = exists ? `(${path})` : "✗";
-    const mark = currentPath === path ? "*" : " ";
-    console.log(`${mark} ${ws} ${pathInfo}`);
+    console.log(formatWorkspaceLine(ws, path, currentPath, exists));
   }
 }
 

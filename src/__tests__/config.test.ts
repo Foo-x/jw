@@ -58,6 +58,16 @@ describe("parseConfig", () => {
       postCreateCommands: [],
     });
   });
+
+  test("defaults copyFiles when not string array", () => {
+    const result = parseConfig({ copyFiles: ["ok", 123] });
+    expect(result.copyFiles).toEqual([]);
+  });
+
+  test("defaults postCreateCommands when not string array", () => {
+    const result = parseConfig({ postCreateCommands: ["ok", null] });
+    expect(result.postCreateCommands).toEqual([]);
+  });
 });
 
 describe("parseConfig - workspacesDirSuffix", () => {

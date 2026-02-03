@@ -31,7 +31,7 @@ Usage:
 `);
 }
 
-function requireArg(
+export function requireArg(
   value: string | undefined,
   argName: string,
   usage: string
@@ -41,7 +41,7 @@ function requireArg(
   }
 }
 
-function generateBashCompletion(): void {
+export function generateBashCompletion(): void {
   console.log(`_jw_completion() {
     local cur prev words cword
     _init_completion || return
@@ -98,7 +98,25 @@ complete -F _jw_completion jw
 `);
 }
 
-async function main() {
+export function parseNewCommandArgs(args: string[]): {
+  name: string | undefined;
+  revision: string | undefined;
+} {
+  let name: string | undefined;
+  let revision: string | undefined;
+
+  for (let i = 1; i < args.length; i++) {
+    if (args[i] === "-r" || args[i] === "--revision") {
+      revision = args[++i];
+    } else if (!args[i].startsWith("-")) {
+      name = args[i];
+    }
+  }
+
+  return { name, revision };
+}
+
+export async function main() {
   const args = process.argv.slice(2);
 
   if (args.length === 0) {
@@ -115,16 +133,7 @@ async function main() {
         break;
 
       case "new": {
-        let name: string | undefined;
-        let revision: string | undefined;
-
-        for (let i = 1; i < args.length; i++) {
-          if (args[i] === "-r" || args[i] === "--revision") {
-            revision = args[++i];
-          } else if (!args[i].startsWith("-")) {
-            name = args[i];
-          }
-        }
+        const { name, revision } = parseNewCommandArgs(args);
 
         requireArg(name, "workspace name", "jw new <name> [-r <revision>]");
         await newWorkspace(name, revision);
@@ -191,4 +200,6 @@ async function main() {
   }
 }
 
-main();
+if (import.meta.main) {
+  main();
+}
