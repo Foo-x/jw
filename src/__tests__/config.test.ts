@@ -7,6 +7,7 @@ describe("parseConfig", () => {
     expect(result).toEqual({
       copyFiles: [],
       postCreateCommands: [],
+      workspacesDirSuffix: "-workspaces",
     });
   });
 
@@ -15,6 +16,7 @@ describe("parseConfig", () => {
     expect(result).toEqual({
       copyFiles: [],
       postCreateCommands: [],
+      workspacesDirSuffix: "-workspaces",
     });
   });
 

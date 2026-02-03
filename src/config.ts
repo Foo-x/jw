@@ -1,6 +1,6 @@
 import { existsSync } from "node:fs";
 import { join } from "node:path";
-import { CONFIG_FILE_NAME } from "./constants.ts";
+import { CONFIG_FILE_NAME, WORKSPACES_DIR_SUFFIX } from "./constants.ts";
 import { ConfigAlreadyExistsError } from "./errors.ts";
 import { getDefaultWorkspacePath } from "./utils.ts";
 
@@ -18,6 +18,7 @@ export function getDefaultConfig(): Config {
   return {
     copyFiles: [],
     postCreateCommands: [],
+    workspacesDirSuffix: WORKSPACES_DIR_SUFFIX,
   };
 }
 
