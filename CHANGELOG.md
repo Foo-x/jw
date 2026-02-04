@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] - 2026-02-04
+
+### Added
+- `workspacesDirSuffix` configuration option in `.jwconfig`
+
+### Changed
+- **BREAKING**: Default `workspacesDirSuffix` changed to `__ws` (was empty string)
+- **BREAKING**: `workspaces` field is no longer stored in `.jwconfig`
+
 ## [0.1.0] - 2026-01-24
 
 ### Added
@@ -27,4 +36,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - List output issue when not in default workspace
 
+[0.2.0]: https://github.com/Foo-x/jw/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/Foo-x/jw/releases/tag/v0.1.0
