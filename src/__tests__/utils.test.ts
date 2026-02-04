@@ -144,7 +144,7 @@ describe("getRepoRoot", () => {
     process.cwd = () => "/a/b/c/d";
     mockExistsSync.mockImplementation((path) => path === "/a/b/.jj" || path === "/a/.jj");
 
-    // /a/b が先にマッチするため /a/b を返す
+    // /a/b matches first, so it is returned
     expect(getRepoRoot()).toBe("/a/b");
   });
 
@@ -203,7 +203,7 @@ describe("getRepoName", () => {
         path === "/home/user/my-repo-workspaces/feature-x/.jj/repo"
     );
     mockStatSync.mockReturnValue({ isDirectory: () => false } as ReturnType<typeof statSync>);
-    // .jj/repo の内容は default workspace の .jj/repo へのパス。dirname を2回適用で default workspace root になる
+    // .jj/repo contains the path to the default workspace's .jj/repo; applying dirname twice yields the default workspace root
     mockReadFileSync.mockReturnValue("/home/user/my-repo/.jj/repo");
 
     expect(getRepoName()).toBe("my-repo");
@@ -222,7 +222,7 @@ describe("getRepoName", () => {
   test("throws when .jj/repo does not exist", () => {
     process.cwd = () => "/home/user/my-repo";
     mockExistsSync.mockImplementation((path) => path === "/home/user/my-repo/.jj");
-    // .jj/repo が存在しないため existsSync で false を返す
+    // .jj/repo does not exist, so existsSync returns false
 
     expect(() => getRepoName()).toThrow("Could not find .jj/repo");
   });

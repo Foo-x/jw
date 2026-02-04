@@ -102,8 +102,8 @@ export function normalizeWorkspaceName(name: string): string {
 }
 
 /**
- * jj workspace listの出力をパースしてworkspace名の配列を返す
- * 出力形式: "workspace_name: change_id commit_id ..."
+ * Parse the output of `jj workspace list` and return an array of workspace names.
+ * Output format: "workspace_name: change_id commit_id ..."
  */
 export function parseJjWorkspaceList(output: string): string[] {
   if (!output.trim()) return [];
@@ -118,7 +118,7 @@ export function parseJjWorkspaceList(output: string): string[] {
 }
 
 /**
- * jj workspace listを実行してworkspace名の配列を取得する
+ * Execute `jj workspace list` and return an array of workspace names.
  */
 export async function getJjWorkspaceList(): Promise<string[]> {
   const result = await execCommand("jj", ["workspace", "list"]);

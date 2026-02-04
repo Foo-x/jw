@@ -131,7 +131,7 @@ export async function goWorkspace(name: string): Promise<void> {
 export async function removeWorkspace(name: string): Promise<void> {
   const { normalizedName, workspacePath } = await resolveWorkspace(name);
 
-  // デフォルトワークスペースの削除を禁止
+  // Prevent deletion of the default workspace
   if (normalizedName === DEFAULT_WORKSPACE_NAME) {
     throw new CannotRemoveDefaultWorkspaceError();
   }
