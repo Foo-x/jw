@@ -196,11 +196,11 @@ describe("getRepoName", () => {
   });
 
   test("returns default workspace name when .jj/repo is a file", () => {
-    process.cwd = () => "/home/user/my-repo-workspaces/feature-x";
+    process.cwd = () => "/home/user/my-repo__ws/feature-x";
     mockExistsSync.mockImplementation(
       (path) =>
-        path === "/home/user/my-repo-workspaces/feature-x/.jj" ||
-        path === "/home/user/my-repo-workspaces/feature-x/.jj/repo"
+        path === "/home/user/my-repo__ws/feature-x/.jj" ||
+        path === "/home/user/my-repo__ws/feature-x/.jj/repo"
     );
     mockStatSync.mockReturnValue({ isDirectory: () => false } as ReturnType<typeof statSync>);
     // .jj/repo contains the path to the default workspace's .jj/repo; applying dirname twice yields the default workspace root
@@ -263,7 +263,7 @@ describe("getWorkspacesDirName", () => {
   });
 
   test("uses default suffix when undefined", () => {
-    expect(getWorkspacesDirName("my-repo", undefined)).toBe("my-repo-workspaces");
+    expect(getWorkspacesDirName("my-repo", undefined)).toBe("my-repo__ws");
   });
 
   test("uses provided suffix with underscore", () => {
@@ -284,14 +284,14 @@ describe("getWorkspacesDir", () => {
     process.cwd = originalCwd;
   });
 
-  test("returns <parent>/<repoName>-workspaces when .jj/repo is a directory and no suffix given", () => {
+  test("returns <parent>/<repoName>__ws when .jj/repo is a directory and no suffix given", () => {
     process.cwd = () => "/home/user/my-repo";
     mockExistsSync.mockImplementation(
       (path) => path === "/home/user/my-repo/.jj" || path === "/home/user/my-repo/.jj/repo"
     );
     mockStatSync.mockReturnValue({ isDirectory: () => true } as ReturnType<typeof statSync>);
 
-    expect(getWorkspacesDir()).toBe("/home/user/my-repo-workspaces");
+    expect(getWorkspacesDir()).toBe("/home/user/my-repo__ws");
   });
 
   test("returns <parent>/<repoName><suffix> when custom suffix is provided", () => {
@@ -305,16 +305,16 @@ describe("getWorkspacesDir", () => {
   });
 
   test("resolves via .jj/repo file when in a linked workspace", () => {
-    process.cwd = () => "/home/user/my-repo-workspaces/feature-x";
+    process.cwd = () => "/home/user/my-repo__ws/feature-x";
     mockExistsSync.mockImplementation(
       (path) =>
-        path === "/home/user/my-repo-workspaces/feature-x/.jj" ||
-        path === "/home/user/my-repo-workspaces/feature-x/.jj/repo"
+        path === "/home/user/my-repo__ws/feature-x/.jj" ||
+        path === "/home/user/my-repo__ws/feature-x/.jj/repo"
     );
     mockStatSync.mockReturnValue({ isDirectory: () => false } as ReturnType<typeof statSync>);
     mockReadFileSync.mockReturnValue("/home/user/my-repo/.jj/repo");
 
-    expect(getWorkspacesDir()).toBe("/home/user/my-repo-workspaces");
+    expect(getWorkspacesDir()).toBe("/home/user/my-repo__ws");
   });
 
   test("resolves via .jj/repo file with custom suffix", () => {
@@ -375,7 +375,7 @@ describe("getWorkspacePath", () => {
     );
     mockStatSync.mockReturnValue({ isDirectory: () => true } as ReturnType<typeof statSync>);
 
-    expect(getWorkspacePath("feature-x")).toBe("/home/user/my-repo-workspaces/feature-x");
+    expect(getWorkspacePath("feature-x")).toBe("/home/user/my-repo__ws/feature-x");
   });
 
   test("returns <workspacesDir>/<name> with custom suffix", () => {
@@ -389,16 +389,16 @@ describe("getWorkspacePath", () => {
   });
 
   test("resolves correctly when in a linked workspace via .jj/repo file", () => {
-    process.cwd = () => "/home/user/my-repo-workspaces/feature-x";
+    process.cwd = () => "/home/user/my-repo__ws/feature-x";
     mockExistsSync.mockImplementation(
       (path) =>
-        path === "/home/user/my-repo-workspaces/feature-x/.jj" ||
-        path === "/home/user/my-repo-workspaces/feature-x/.jj/repo"
+        path === "/home/user/my-repo__ws/feature-x/.jj" ||
+        path === "/home/user/my-repo__ws/feature-x/.jj/repo"
     );
     mockStatSync.mockReturnValue({ isDirectory: () => false } as ReturnType<typeof statSync>);
     mockReadFileSync.mockReturnValue("/home/user/my-repo/.jj/repo");
 
-    expect(getWorkspacePath("bugfix-1")).toBe("/home/user/my-repo-workspaces/bugfix-1");
+    expect(getWorkspacePath("bugfix-1")).toBe("/home/user/my-repo__ws/bugfix-1");
   });
 
   test("resolves correctly when in a linked workspace with custom suffix", () => {

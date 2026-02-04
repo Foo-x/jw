@@ -25,7 +25,7 @@ describe("parseConfig", () => {
     expect(result).toEqual({
       copyFiles: [],
       postCreateCommands: [],
-      workspacesDirSuffix: "-workspaces",
+      workspacesDirSuffix: "__ws",
     });
   });
 
@@ -34,7 +34,7 @@ describe("parseConfig", () => {
     expect(result).toEqual({
       copyFiles: [],
       postCreateCommands: [],
-      workspacesDirSuffix: "-workspaces",
+      workspacesDirSuffix: "__ws",
     });
   });
 
@@ -148,7 +148,7 @@ describe("loadConfig", () => {
     expect(result).toEqual({
       copyFiles: [],
       postCreateCommands: [],
-      workspacesDirSuffix: "-workspaces",
+      workspacesDirSuffix: "__ws",
     });
   });
 
@@ -180,7 +180,7 @@ describe("loadConfig", () => {
     expect(result).toEqual({
       copyFiles: [],
       postCreateCommands: [],
-      workspacesDirSuffix: "-workspaces",
+      workspacesDirSuffix: "__ws",
     });
     expect(consoleSpy).toHaveBeenCalledWith(expect.stringMatching(/Failed to load config file/));
     consoleSpy.mockRestore();
@@ -277,7 +277,7 @@ describe("initConfig", () => {
         {
           copyFiles: [],
           postCreateCommands: [],
-          workspacesDirSuffix: "-workspaces",
+          workspacesDirSuffix: "__ws",
         },
         null,
         2

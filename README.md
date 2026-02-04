@@ -19,7 +19,7 @@ jw new <name>
 ```
 
 - Any `/` in the name is automatically converted to `-`
-- The workspace is created in `../<repo>-workspaces/<name>` directory
+- The workspace is created in `../<repo>__ws/<name>` directory
 - Files specified in `.jwconfig` are copied
 - Commands specified in `.jwconfig` are executed
 

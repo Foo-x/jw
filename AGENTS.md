@@ -44,7 +44,7 @@ constants.ts    → App-wide constants (file names, default values, etc.).
 
 - Default workspace: if `.jj/repo` is a directory, the current location is the default workspace; if it is a file, the default workspace is two parent directories up from the path it contains
 - Other workspaces live under `<parent of default workspace>/<repo name><suffix>/`
-- `suffix` defaults to `-workspaces`, configurable via `workspacesDirSuffix` in `.jwconfig`
+- `suffix` defaults to `__ws`, configurable via `workspacesDirSuffix` in `.jwconfig`
 - Forward slashes `/` in workspace names are automatically converted to `-`
 
 ### .jwconfig fields
