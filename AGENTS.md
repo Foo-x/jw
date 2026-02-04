@@ -8,15 +8,15 @@ This file provides guidance to AI Agent when working with code in this repositor
 bun install          # Install dependencies
 bun run lint         # Lint with Biome
 bun run format       # Format with Biome
-bun test             # Run tests
-bun test --watch     # Run tests in watch mode
+bun run test         # Run tests
+bun run test:c       # Run tests and output coverage
 bunx tsc --noEmit    # Type check
 bun run src/index.ts # Run the CLI directly
 ```
 
 Running a single test file:
 ```bash
-bun test src/__tests__/config.test.ts
+bun run test src/__tests__/config.test.ts
 ```
 
 ## Architecture
@@ -55,7 +55,7 @@ constants.ts    → App-wide constants (file names, default values, etc.).
 
 ## Tests
 
-Tests live in `src/__tests__/` and use `bun:test`.
+Tests live in `src/__tests__/` and use `vitest`.
 Workspace operations require a jj repository and are not covered by automated tests.
 
 ## Lint / Format

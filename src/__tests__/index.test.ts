@@ -1,25 +1,25 @@
-import { afterEach, beforeEach, describe, expect, mock, test, vi } from "bun:test";
+import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import { DEFAULT_WORKSPACE_NAME } from "../constants.ts";
 import { main } from "../index.ts";
 
-const cleanWorkspacesMock = vi.fn();
-const copyToWorkspaceMock = vi.fn();
-const goWorkspaceMock = vi.fn();
-const initWorkspaceMock = vi.fn();
-const listWorkspacesMock = vi.fn();
-const newWorkspaceMock = vi.fn();
-const removeWorkspaceMock = vi.fn();
-const renameWorkspaceMock = vi.fn();
+const mockCleanWorkspaces = vi.hoisted(() => vi.fn());
+const mockCopyToWorkspace = vi.hoisted(() => vi.fn());
+const mockGoWorkspace = vi.hoisted(() => vi.fn());
+const mockInitWorkspace = vi.hoisted(() => vi.fn());
+const mockListWorkspaces = vi.hoisted(() => vi.fn());
+const mockNewWorkspace = vi.hoisted(() => vi.fn());
+const mockRemoveWorkspace = vi.hoisted(() => vi.fn());
+const mockRenameWorkspace = vi.hoisted(() => vi.fn());
 
-mock.module("../workspace.ts", () => ({
-  cleanWorkspaces: cleanWorkspacesMock,
-  copyToWorkspace: copyToWorkspaceMock,
-  goWorkspace: goWorkspaceMock,
-  initWorkspace: initWorkspaceMock,
-  listWorkspaces: listWorkspacesMock,
-  newWorkspace: newWorkspaceMock,
-  removeWorkspace: removeWorkspaceMock,
-  renameWorkspace: renameWorkspaceMock,
+vi.mock(import("../workspace.ts"), () => ({
+  cleanWorkspaces: mockCleanWorkspaces,
+  copyToWorkspace: mockCopyToWorkspace,
+  goWorkspace: mockGoWorkspace,
+  initWorkspace: mockInitWorkspace,
+  listWorkspaces: mockListWorkspaces,
+  newWorkspace: mockNewWorkspace,
+  removeWorkspace: mockRemoveWorkspace,
+  renameWorkspace: mockRenameWorkspace,
 }));
 
 const originalArgv = process.argv;
@@ -34,15 +34,15 @@ const setArgv = (args: string[]) => {
 
 beforeEach(() => {
   vi.clearAllMocks();
-  cleanWorkspacesMock.mockResolvedValue(undefined);
-  copyToWorkspaceMock.mockResolvedValue(undefined);
-  goWorkspaceMock.mockResolvedValue(undefined);
-  initWorkspaceMock.mockResolvedValue(undefined);
-  listWorkspacesMock.mockResolvedValue(undefined);
-  newWorkspaceMock.mockResolvedValue(undefined);
-  removeWorkspaceMock.mockResolvedValue(undefined);
-  renameWorkspaceMock.mockResolvedValue(undefined);
-  exitSpy = vi.spyOn(process, "exit").mockImplementation((code?: number) => {
+  mockCleanWorkspaces.mockResolvedValue(undefined);
+  mockCopyToWorkspace.mockResolvedValue(undefined);
+  mockGoWorkspace.mockResolvedValue(undefined);
+  mockInitWorkspace.mockResolvedValue(undefined);
+  mockListWorkspaces.mockResolvedValue(undefined);
+  mockNewWorkspace.mockResolvedValue(undefined);
+  mockRemoveWorkspace.mockResolvedValue(undefined);
+  mockRenameWorkspace.mockResolvedValue(undefined);
+  exitSpy = vi.spyOn(process, "exit").mockImplementation((code) => {
     throw code ?? 0;
   });
   logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
@@ -60,9 +60,9 @@ describe("index CLI", () => {
   test("shows help and exits when no args", async () => {
     setArgv([]);
 
-    const result = main()
+    const result = main();
 
-    expect(result).rejects.toThrow("0");
+    await expect(result).rejects.toBe(0);
     expect(logSpy.mock.calls[0]?.[0]).toContain("Usage");
   });
 
@@ -71,7 +71,7 @@ describe("index CLI", () => {
 
     await main();
 
-    expect(initWorkspaceMock).toHaveBeenCalled();
+    expect(mockInitWorkspace).toHaveBeenCalled();
   });
 
   test("parses new command with revision", async () => {
@@ -79,7 +79,7 @@ describe("index CLI", () => {
 
     await main();
 
-    expect(newWorkspaceMock).toHaveBeenCalledWith("feature", "abc123");
+    expect(mockNewWorkspace).toHaveBeenCalledWith("feature", "abc123");
   });
 
   test("lists workspaces", async () => {
@@ -87,7 +87,7 @@ describe("index CLI", () => {
 
     await main();
 
-    expect(listWorkspacesMock).toHaveBeenCalled();
+    expect(mockListWorkspaces).toHaveBeenCalled();
   });
 
   test("uses default workspace for go", async () => {
@@ -95,7 +95,7 @@ describe("index CLI", () => {
 
     await main();
 
-    expect(goWorkspaceMock).toHaveBeenCalledWith(DEFAULT_WORKSPACE_NAME);
+    expect(mockGoWorkspace).toHaveBeenCalledWith(DEFAULT_WORKSPACE_NAME);
   });
 
   test("uses provided workspace for go", async () => {
@@ -103,7 +103,7 @@ describe("index CLI", () => {
 
     await main();
 
-    expect(goWorkspaceMock).toHaveBeenCalledWith("feature");
+    expect(mockGoWorkspace).toHaveBeenCalledWith("feature");
   });
 
   test("removes workspace", async () => {
@@ -111,7 +111,7 @@ describe("index CLI", () => {
 
     await main();
 
-    expect(removeWorkspaceMock).toHaveBeenCalledWith("old");
+    expect(mockRemoveWorkspace).toHaveBeenCalledWith("old");
   });
 
   test("renames workspace", async () => {
@@ -119,7 +119,7 @@ describe("index CLI", () => {
 
     await main();
 
-    expect(renameWorkspaceMock).toHaveBeenCalledWith("old", "new");
+    expect(mockRenameWorkspace).toHaveBeenCalledWith("old", "new");
   });
 
   test("copies workspace files", async () => {
@@ -127,7 +127,7 @@ describe("index CLI", () => {
 
     await main();
 
-    expect(copyToWorkspaceMock).toHaveBeenCalledWith("docs");
+    expect(mockCopyToWorkspace).toHaveBeenCalledWith("docs");
   });
 
   test("cleans workspaces", async () => {
@@ -135,7 +135,7 @@ describe("index CLI", () => {
 
     await main();
 
-    expect(cleanWorkspacesMock).toHaveBeenCalled();
+    expect(mockCleanWorkspaces).toHaveBeenCalled();
   });
 
   test("prints help for help command", async () => {
@@ -173,9 +173,9 @@ describe("index CLI", () => {
   test("reports validation error for missing rm arg", async () => {
     setArgv(["rm"]);
 
-    const result = main()
+    const result = main();
 
-    expect(result).rejects.toThrow("1");
+    await expect(result).rejects.toBe(1);
     expect(errorSpy).toHaveBeenCalledWith(
       "Error: Please specify a workspace name\nUsage: jw rm <name>"
     );
@@ -184,28 +184,28 @@ describe("index CLI", () => {
   test("reports unsupported shell", async () => {
     setArgv(["completion", "zsh"]);
 
-    const result = main()
+    const result = main();
 
-    expect(result).rejects.toThrow("1");
+    await expect(result).rejects.toBe(1);
     expect(errorSpy).toHaveBeenCalledWith('Error: Unsupported shell "zsh"\nSupported shells: bash');
   });
 
   test("reports unknown command", async () => {
     setArgv(["wat"]);
 
-    const result = main()
+    const result = main();
 
-    expect(result).rejects.toThrow("1");
+    await expect(result).rejects.toBe(1);
     expect(errorSpy).toHaveBeenCalledWith('Error: Unknown command "wat"');
   });
 
   test("reports unexpected errors", async () => {
-    listWorkspacesMock.mockRejectedValueOnce(new Error("boom"));
+    mockListWorkspaces.mockRejectedValueOnce(new Error("boom"));
     setArgv(["list"]);
 
-    const result = main()
+    const result = main();
 
-    expect(result).rejects.toThrow("1");
+    await expect(result).rejects.toBe(1);
     expect(errorSpy).toHaveBeenCalledWith("Unexpected error: Error: boom");
   });
 });

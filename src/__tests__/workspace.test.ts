@@ -1,4 +1,4 @@
-import { afterEach, beforeAll, beforeEach, describe, expect, mock, test, vi } from "bun:test";
+import { afterEach, beforeAll, beforeEach, describe, expect, test, vi } from "vitest";
 import { DEFAULT_WORKSPACE_NAME } from "../constants.ts";
 import {
   CannotRemoveDefaultWorkspaceError,
@@ -7,46 +7,49 @@ import {
   WorkspaceNotFoundError,
 } from "../errors.ts";
 
-const actualConfig = await import("../config.ts");
-const actualUtils = await import("../utils.ts");
+const mockExistsSync = vi.fn();
+const mockLoadConfig = vi.fn();
+const mockInitConfig = vi.fn();
+const mockGetConfigPath = vi.fn();
+const mockCopyFileOrDir = vi.fn();
+const mockExecCommand = vi.fn();
+const mockGetDefaultWorkspacePath = vi.fn();
+const mockGetJjWorkspaceList = vi.fn();
+const mockGetRepoRoot = vi.fn();
+const mockGetWorkspacePath = vi.fn();
+const mockGetWorkspacesDir = vi.fn();
+const mockNormalizeWorkspaceName = vi.fn();
+const mockRemoveDir = vi.fn();
 
-const existsSyncMock = vi.fn();
-const loadConfigMock = vi.fn();
-const initConfigMock = vi.fn();
-const getConfigPathMock = vi.fn();
-const copyFileOrDirMock = vi.fn();
-const execCommandMock = vi.fn();
-const getDefaultWorkspacePathMock = vi.fn();
-const getJjWorkspaceListMock = vi.fn();
-const getRepoRootMock = vi.fn();
-const getWorkspacePathMock = vi.fn();
-const getWorkspacesDirMock = vi.fn();
-const normalizeWorkspaceNameMock = vi.fn();
-const removeDirMock = vi.fn();
-
-mock.module("node:fs", () => ({
-  existsSync: existsSyncMock,
+vi.mock("node:fs", () => ({
+  existsSync: mockExistsSync,
 }));
 
-mock.module("../config.ts", () => ({
-  ...actualConfig,
-  getConfigPath: getConfigPathMock,
-  initConfig: initConfigMock,
-  loadConfig: loadConfigMock,
-}));
+vi.mock(import("../config.ts"), async (importActual) => {
+  const actual = await importActual();
+  return {
+    ...actual,
+    getConfigPath: mockGetConfigPath,
+    initConfig: mockInitConfig,
+    loadConfig: mockLoadConfig,
+  };
+});
 
-mock.module("../utils.ts", () => ({
-  ...actualUtils,
-  copyFileOrDir: copyFileOrDirMock,
-  execCommand: execCommandMock,
-  getDefaultWorkspacePath: getDefaultWorkspacePathMock,
-  getJjWorkspaceList: getJjWorkspaceListMock,
-  getRepoRoot: getRepoRootMock,
-  getWorkspacePath: getWorkspacePathMock,
-  getWorkspacesDir: getWorkspacesDirMock,
-  normalizeWorkspaceName: normalizeWorkspaceNameMock,
-  removeDir: removeDirMock,
-}));
+vi.mock(import("../utils.ts"), async (importActual) => {
+  const actual = await importActual();
+  return {
+    ...actual,
+    copyFileOrDir: mockCopyFileOrDir,
+    execCommand: mockExecCommand,
+    getDefaultWorkspacePath: mockGetDefaultWorkspacePath,
+    getJjWorkspaceList: mockGetJjWorkspaceList,
+    getRepoRoot: mockGetRepoRoot,
+    getWorkspacePath: mockGetWorkspacePath,
+    getWorkspacesDir: mockGetWorkspacesDir,
+    normalizeWorkspaceName: mockNormalizeWorkspaceName,
+    removeDir: mockRemoveDir,
+  };
+});
 
 let workspace: typeof import("../workspace.ts");
 let logSpy: ReturnType<typeof vi.spyOn>;
@@ -60,23 +63,23 @@ beforeEach(() => {
   vi.clearAllMocks();
   logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
   warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
-  loadConfigMock.mockResolvedValue({
+  mockLoadConfig.mockResolvedValue({
     copyFiles: [],
     postCreateCommands: [],
     workspacesDirSuffix: "-workspaces",
   });
-  initConfigMock.mockResolvedValue(undefined);
-  getConfigPathMock.mockReturnValue("/repo/.jwconfig");
-  normalizeWorkspaceNameMock.mockImplementation((name: string) => name.replace(/\//g, "-"));
-  getWorkspacePathMock.mockImplementation((name: string) => `/repo-workspaces/${name}`);
-  getWorkspacesDirMock.mockReturnValue("/repo-workspaces");
-  getDefaultWorkspacePathMock.mockReturnValue("/repo");
-  getRepoRootMock.mockReturnValue("/repo");
-  getJjWorkspaceListMock.mockResolvedValue([]);
-  execCommandMock.mockResolvedValue({ stdout: "", stderr: "", exitCode: 0 });
-  existsSyncMock.mockReturnValue(false);
-  copyFileOrDirMock.mockResolvedValue(undefined);
-  removeDirMock.mockResolvedValue(undefined);
+  mockInitConfig.mockResolvedValue(undefined);
+  mockGetConfigPath.mockReturnValue("/repo/.jwconfig");
+  mockNormalizeWorkspaceName.mockImplementation((name: string) => name.replace(/\//g, "-"));
+  mockGetWorkspacePath.mockImplementation((name: string) => `/repo-workspaces/${name}`);
+  mockGetWorkspacesDir.mockReturnValue("/repo-workspaces");
+  mockGetDefaultWorkspacePath.mockReturnValue("/repo");
+  mockGetRepoRoot.mockReturnValue("/repo");
+  mockGetJjWorkspaceList.mockResolvedValue([]);
+  mockExecCommand.mockResolvedValue({ stdout: "", stderr: "", exitCode: 0 });
+  mockExistsSync.mockReturnValue(false);
+  mockCopyFileOrDir.mockResolvedValue(undefined);
+  mockRemoveDir.mockResolvedValue(undefined);
 });
 
 afterEach(() => {
@@ -121,18 +124,18 @@ describe("formatWorkspaceLine", () => {
 
 describe("newWorkspace", () => {
   test("throws when workspace already exists", async () => {
-    existsSyncMock.mockImplementation((path: string) => path === "/repo-workspaces/feature");
+    mockExistsSync.mockImplementation((path: string) => path === "/repo-workspaces/feature");
     await expect(workspace.newWorkspace("feature")).rejects.toBeInstanceOf(WorkspaceExistsError);
-    expect(execCommandMock).not.toHaveBeenCalled();
+    expect(mockExecCommand).not.toHaveBeenCalled();
   });
 
   test("creates workspace, copies files, and warns on command failure", async () => {
-    loadConfigMock.mockResolvedValue({
+    mockLoadConfig.mockResolvedValue({
       copyFiles: ["README.md", ".env"],
       postCreateCommands: ["npm install", "bun test"],
       workspacesDirSuffix: "-workspaces",
     });
-    execCommandMock
+    mockExecCommand
       .mockResolvedValueOnce({ stdout: "", stderr: "", exitCode: 0 })
       .mockResolvedValueOnce({ stdout: "", stderr: "", exitCode: 0 })
       .mockResolvedValueOnce({ stdout: "", stderr: "boom", exitCode: 1 })
@@ -140,8 +143,8 @@ describe("newWorkspace", () => {
 
     await workspace.newWorkspace("feature", "abc123");
 
-    expect(execCommandMock).toHaveBeenNthCalledWith(1, "mkdir", ["-p", "/repo-workspaces"]);
-    expect(execCommandMock).toHaveBeenNthCalledWith(2, "jj", [
+    expect(mockExecCommand).toHaveBeenNthCalledWith(1, "mkdir", ["-p", "/repo-workspaces"]);
+    expect(mockExecCommand).toHaveBeenNthCalledWith(2, "jj", [
       "workspace",
       "add",
       "--name",
@@ -150,25 +153,29 @@ describe("newWorkspace", () => {
       "abc123",
       "/repo-workspaces/feature",
     ]);
-    expect(copyFileOrDirMock).toHaveBeenCalledWith("/repo/README.md", "/repo-workspaces/feature");
-    expect(copyFileOrDirMock).toHaveBeenCalledWith("/repo/.env", "/repo-workspaces/feature");
-    expect(execCommandMock).toHaveBeenCalledWith("npm", ["install"], "/repo-workspaces/feature");
-    expect(execCommandMock).toHaveBeenCalledWith("bun", ["test"], "/repo-workspaces/feature");
+    expect(mockCopyFileOrDir).toHaveBeenCalledWith("/repo/README.md", "/repo-workspaces/feature");
+    expect(mockCopyFileOrDir).toHaveBeenCalledWith("/repo/.env", "/repo-workspaces/feature");
+    expect(mockExecCommand).toHaveBeenCalledWith("npm", ["install"], "/repo-workspaces/feature");
+    expect(mockExecCommand).toHaveBeenCalledWith("bun", ["test"], "/repo-workspaces/feature");
     expect(warnSpy).toHaveBeenCalledWith("Command failed: npm install");
     expect(warnSpy).toHaveBeenCalledWith("boom");
   });
 
   test("throws when jj workspace add fails", async () => {
-    existsSyncMock.mockImplementation((path: string) => path === "/repo-workspaces");
-    execCommandMock.mockResolvedValueOnce({ stdout: "", stderr: "nope", exitCode: 1 });
+    mockExistsSync.mockImplementation((path: string) => path === "/repo-workspaces");
+    mockExecCommand.mockResolvedValueOnce({
+      stdout: "",
+      stderr: "nope",
+      exitCode: 1,
+    });
     await expect(workspace.newWorkspace("feature")).rejects.toBeInstanceOf(JujutsuCommandError);
   });
 });
 
 describe("listWorkspaces", () => {
   test("logs workspaces with default and missing markers", async () => {
-    getJjWorkspaceListMock.mockResolvedValue(["default", "feature", "stale"]);
-    existsSyncMock.mockImplementation((path: string) => path === "/repo-workspaces/feature");
+    mockGetJjWorkspaceList.mockResolvedValue(["default", "feature", "stale"]);
+    mockExistsSync.mockImplementation((path: string) => path === "/repo-workspaces/feature");
 
     await workspace.listWorkspaces();
 
@@ -182,7 +189,7 @@ describe("goWorkspace", () => {
   test("prints default workspace path", async () => {
     await workspace.goWorkspace(DEFAULT_WORKSPACE_NAME);
     expect(logSpy).toHaveBeenCalledWith("/repo");
-    expect(getWorkspacePathMock).not.toHaveBeenCalled();
+    expect(mockGetWorkspacePath).not.toHaveBeenCalled();
   });
 
   test("throws when workspace is missing", async () => {
@@ -190,7 +197,7 @@ describe("goWorkspace", () => {
   });
 
   test("prints workspace path when it exists", async () => {
-    existsSyncMock.mockImplementation((path: string) => path === "/repo-workspaces/feature");
+    mockExistsSync.mockImplementation((path: string) => path === "/repo-workspaces/feature");
     await workspace.goWorkspace("feature");
     expect(logSpy).toHaveBeenCalledWith("/repo-workspaces/feature");
   });
@@ -204,14 +211,18 @@ describe("removeWorkspace", () => {
   });
 
   test("forgets and removes workspace, warning on jj failure", async () => {
-    existsSyncMock.mockImplementation((path: string) => path === "/repo-workspaces/feature");
-    execCommandMock.mockResolvedValueOnce({ stdout: "", stderr: "boom", exitCode: 1 });
+    mockExistsSync.mockImplementation((path: string) => path === "/repo-workspaces/feature");
+    mockExecCommand.mockResolvedValueOnce({
+      stdout: "",
+      stderr: "boom",
+      exitCode: 1,
+    });
 
     await workspace.removeWorkspace("feature");
 
-    expect(execCommandMock).toHaveBeenCalledWith("jj", ["workspace", "forget", "feature"]);
+    expect(mockExecCommand).toHaveBeenCalledWith("jj", ["workspace", "forget", "feature"]);
     expect(warnSpy).toHaveBeenCalledWith("Failed to run jj workspace forget: boom");
-    expect(removeDirMock).toHaveBeenCalledWith("/repo-workspaces/feature");
+    expect(mockRemoveDir).toHaveBeenCalledWith("/repo-workspaces/feature");
     expect(logSpy).toHaveBeenCalledWith('Removed workspace "feature"');
   });
 });
@@ -224,16 +235,16 @@ describe("copyToWorkspace", () => {
   });
 
   test("copies files to workspace", async () => {
-    loadConfigMock.mockResolvedValue({
+    mockLoadConfig.mockResolvedValue({
       copyFiles: ["README.md"],
       postCreateCommands: [],
       workspacesDirSuffix: "-workspaces",
     });
-    existsSyncMock.mockImplementation((path: string) => path === "/repo-workspaces/feature");
+    mockExistsSync.mockImplementation((path: string) => path === "/repo-workspaces/feature");
 
     await workspace.copyToWorkspace("feature");
 
-    expect(copyFileOrDirMock).toHaveBeenCalledWith("/repo/README.md", "/repo-workspaces/feature");
+    expect(mockCopyFileOrDir).toHaveBeenCalledWith("/repo/README.md", "/repo-workspaces/feature");
   });
 });
 
@@ -245,7 +256,7 @@ describe("renameWorkspace", () => {
   });
 
   test("throws when new workspace already exists", async () => {
-    existsSyncMock.mockImplementation(
+    mockExistsSync.mockImplementation(
       (path: string) => path === "/repo-workspaces/old" || path === "/repo-workspaces/new"
     );
     await expect(workspace.renameWorkspace("old", "new")).rejects.toBeInstanceOf(
@@ -254,8 +265,12 @@ describe("renameWorkspace", () => {
   });
 
   test("throws when jj rename fails", async () => {
-    existsSyncMock.mockImplementation((path: string) => path === "/repo-workspaces/old");
-    execCommandMock.mockResolvedValueOnce({ stdout: "", stderr: "rename failed", exitCode: 1 });
+    mockExistsSync.mockImplementation((path: string) => path === "/repo-workspaces/old");
+    mockExecCommand.mockResolvedValueOnce({
+      stdout: "",
+      stderr: "rename failed",
+      exitCode: 1,
+    });
 
     await expect(workspace.renameWorkspace("old", "new")).rejects.toBeInstanceOf(
       JujutsuCommandError
@@ -263,20 +278,20 @@ describe("renameWorkspace", () => {
   });
 
   test("renames workspace when jj succeeds", async () => {
-    existsSyncMock.mockImplementation((path: string) => path === "/repo-workspaces/old");
-    execCommandMock
+    mockExistsSync.mockImplementation((path: string) => path === "/repo-workspaces/old");
+    mockExecCommand
       .mockResolvedValueOnce({ stdout: "", stderr: "", exitCode: 0 })
       .mockResolvedValueOnce({ stdout: "", stderr: "", exitCode: 0 });
 
     await workspace.renameWorkspace("old", "new");
 
-    expect(execCommandMock).toHaveBeenNthCalledWith(
+    expect(mockExecCommand).toHaveBeenNthCalledWith(
       1,
       "jj",
       ["workspace", "rename", "new"],
       "/repo-workspaces/old"
     );
-    expect(execCommandMock).toHaveBeenNthCalledWith(2, "mv", [
+    expect(mockExecCommand).toHaveBeenNthCalledWith(2, "mv", [
       "/repo-workspaces/old",
       "/repo-workspaces/new",
     ]);
@@ -286,18 +301,18 @@ describe("renameWorkspace", () => {
 
 describe("cleanWorkspaces", () => {
   test("logs when no stale workspaces are found", async () => {
-    getJjWorkspaceListMock.mockResolvedValue(["default", "feature"]);
-    existsSyncMock.mockImplementation((path: string) => path === "/repo-workspaces/feature");
+    mockGetJjWorkspaceList.mockResolvedValue(["default", "feature"]);
+    mockExistsSync.mockImplementation((path: string) => path === "/repo-workspaces/feature");
 
     await workspace.cleanWorkspaces();
 
     expect(logSpy).toHaveBeenCalledWith("No stale workspaces found");
-    expect(execCommandMock).not.toHaveBeenCalled();
+    expect(mockExecCommand).not.toHaveBeenCalled();
   });
 
   test("forgets missing workspaces and logs warnings", async () => {
-    getJjWorkspaceListMock.mockResolvedValue(["default", "gone", "fail"]);
-    execCommandMock
+    mockGetJjWorkspaceList.mockResolvedValue(["default", "gone", "fail"]);
+    mockExecCommand
       .mockResolvedValueOnce({ stdout: "", stderr: "", exitCode: 0 })
       .mockResolvedValueOnce({ stdout: "", stderr: "boom\n", exitCode: 1 });
 
@@ -312,8 +327,8 @@ describe("cleanWorkspaces", () => {
 describe("initWorkspace", () => {
   test("initializes config and logs path", async () => {
     await workspace.initWorkspace();
-    expect(getRepoRootMock).toHaveBeenCalled();
-    expect(initConfigMock).toHaveBeenCalled();
+    expect(mockGetRepoRoot).toHaveBeenCalled();
+    expect(mockInitConfig).toHaveBeenCalled();
     expect(logSpy).toHaveBeenCalledWith("Initialized jw config: /repo/.jwconfig");
   });
 });
