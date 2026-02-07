@@ -22,6 +22,13 @@ vi.mock("node:fs", () => ({
 
 import { existsSync, readFileSync, statSync } from "node:fs";
 
+// Shared test constants
+const REPO_ROOT = "/home/user/my-repo";
+const JJ_DIR = `${REPO_ROOT}/.jj`;
+const JJ_REPO = `${REPO_ROOT}/.jj/repo`;
+const WORKSPACES_DIR_DEFAULT = `${REPO_ROOT}__ws`;
+const WORKSPACES_DIR_CUSTOM = `${REPO_ROOT}-ws`;
+
 function mockSpawn(stdout: string, stderr: string, exitCode: number) {
   globalThis.Bun = {
     ...globalThis.Bun,
@@ -127,17 +134,17 @@ describe("getRepoRoot", () => {
   });
 
   test("returns current directory when .jj exists there", () => {
-    process.cwd = () => "/home/user/project";
-    mockExistsSync.mockImplementation((path) => path === "/home/user/project/.jj");
+    process.cwd = () => REPO_ROOT;
+    mockExistsSync.mockImplementation((path) => path === JJ_DIR);
 
-    expect(getRepoRoot()).toBe("/home/user/project");
+    expect(getRepoRoot()).toBe(REPO_ROOT);
   });
 
   test("returns ancestor directory when .jj exists in parent", () => {
-    process.cwd = () => "/home/user/project/src/deep";
-    mockExistsSync.mockImplementation((path) => path === "/home/user/project/.jj");
+    process.cwd = () => `${REPO_ROOT}/src/deep`;
+    mockExistsSync.mockImplementation((path) => path === JJ_DIR);
 
-    expect(getRepoRoot()).toBe("/home/user/project");
+    expect(getRepoRoot()).toBe(REPO_ROOT);
   });
 
   test("returns the nearest ancestor containing .jj", () => {
@@ -149,7 +156,7 @@ describe("getRepoRoot", () => {
   });
 
   test("throws NotJujutsuRepositoryError when .jj is not found anywhere", () => {
-    process.cwd = () => "/home/user/project";
+    process.cwd = () => REPO_ROOT;
     mockExistsSync.mockReturnValue(false);
 
     expect(() => getRepoRoot()).toThrow(NotJujutsuRepositoryError);
@@ -186,33 +193,30 @@ describe("getRepoName", () => {
   });
 
   test("returns directory name when .jj/repo is a directory", () => {
-    process.cwd = () => "/home/user/my-repo";
-    mockExistsSync.mockImplementation(
-      (path) => path === "/home/user/my-repo/.jj" || path === "/home/user/my-repo/.jj/repo"
-    );
+    process.cwd = () => REPO_ROOT;
+    mockExistsSync.mockImplementation((path) => path === JJ_DIR || path === JJ_REPO);
     mockStatSync.mockReturnValue({ isDirectory: () => true } as ReturnType<typeof statSync>);
 
     expect(getRepoName()).toBe("my-repo");
   });
 
   test("returns default workspace name when .jj/repo is a file", () => {
-    process.cwd = () => "/home/user/my-repo__ws/feature-x";
+    const workspacePath = `${WORKSPACES_DIR_DEFAULT}/feature-x`;
+    process.cwd = () => workspacePath;
     mockExistsSync.mockImplementation(
-      (path) =>
-        path === "/home/user/my-repo__ws/feature-x/.jj" ||
-        path === "/home/user/my-repo__ws/feature-x/.jj/repo"
+      (path) => path === `${workspacePath}/.jj` || path === `${workspacePath}/.jj/repo`
     );
     mockStatSync.mockReturnValue({ isDirectory: () => false } as ReturnType<typeof statSync>);
-    // .jj/repo contains the path to the default workspace's .jj/repo; applying dirname twice yields the default workspace root
-    mockReadFileSync.mockReturnValue("/home/user/my-repo/.jj/repo");
+    mockReadFileSync.mockReturnValue(JJ_REPO);
 
     expect(getRepoName()).toBe("my-repo");
   });
 
   test("returns correct name for deeply nested cwd", () => {
-    process.cwd = () => "/home/user/project/src/deep";
+    const projectRoot = "/home/user/project";
+    process.cwd = () => `${projectRoot}/src/deep`;
     mockExistsSync.mockImplementation(
-      (path) => path === "/home/user/project/.jj" || path === "/home/user/project/.jj/repo"
+      (path) => path === `${projectRoot}/.jj` || path === `${projectRoot}/.jj/repo`
     );
     mockStatSync.mockReturnValue({ isDirectory: () => true } as ReturnType<typeof statSync>);
 
@@ -220,9 +224,8 @@ describe("getRepoName", () => {
   });
 
   test("throws when .jj/repo does not exist", () => {
-    process.cwd = () => "/home/user/my-repo";
-    mockExistsSync.mockImplementation((path) => path === "/home/user/my-repo/.jj");
-    // .jj/repo does not exist, so existsSync returns false
+    process.cwd = () => REPO_ROOT;
+    mockExistsSync.mockImplementation((path) => path === JJ_DIR);
 
     expect(() => getRepoName()).toThrow("Could not find .jj/repo");
   });
@@ -285,64 +288,56 @@ describe("getWorkspacesDir", () => {
   });
 
   test("returns <parent>/<repoName>__ws when .jj/repo is a directory and no suffix given", () => {
-    process.cwd = () => "/home/user/my-repo";
-    mockExistsSync.mockImplementation(
-      (path) => path === "/home/user/my-repo/.jj" || path === "/home/user/my-repo/.jj/repo"
-    );
+    process.cwd = () => REPO_ROOT;
+    mockExistsSync.mockImplementation((path) => path === JJ_DIR || path === JJ_REPO);
     mockStatSync.mockReturnValue({ isDirectory: () => true } as ReturnType<typeof statSync>);
 
-    expect(getWorkspacesDir()).toBe("/home/user/my-repo__ws");
+    expect(getWorkspacesDir()).toBe(WORKSPACES_DIR_DEFAULT);
   });
 
   test("returns <parent>/<repoName><suffix> when custom suffix is provided", () => {
-    process.cwd = () => "/home/user/my-repo";
-    mockExistsSync.mockImplementation(
-      (path) => path === "/home/user/my-repo/.jj" || path === "/home/user/my-repo/.jj/repo"
-    );
+    process.cwd = () => REPO_ROOT;
+    mockExistsSync.mockImplementation((path) => path === JJ_DIR || path === JJ_REPO);
     mockStatSync.mockReturnValue({ isDirectory: () => true } as ReturnType<typeof statSync>);
 
-    expect(getWorkspacesDir("-ws")).toBe("/home/user/my-repo-ws");
+    expect(getWorkspacesDir("-ws")).toBe(WORKSPACES_DIR_CUSTOM);
   });
 
   test("resolves via .jj/repo file when in a linked workspace", () => {
-    process.cwd = () => "/home/user/my-repo__ws/feature-x";
+    const workspacePath = `${WORKSPACES_DIR_DEFAULT}/feature-x`;
+    process.cwd = () => workspacePath;
     mockExistsSync.mockImplementation(
-      (path) =>
-        path === "/home/user/my-repo__ws/feature-x/.jj" ||
-        path === "/home/user/my-repo__ws/feature-x/.jj/repo"
+      (path) => path === `${workspacePath}/.jj` || path === `${workspacePath}/.jj/repo`
     );
     mockStatSync.mockReturnValue({ isDirectory: () => false } as ReturnType<typeof statSync>);
-    mockReadFileSync.mockReturnValue("/home/user/my-repo/.jj/repo");
+    mockReadFileSync.mockReturnValue(JJ_REPO);
 
-    expect(getWorkspacesDir()).toBe("/home/user/my-repo__ws");
+    expect(getWorkspacesDir()).toBe(WORKSPACES_DIR_DEFAULT);
   });
 
   test("resolves via .jj/repo file with custom suffix", () => {
-    process.cwd = () => "/home/user/my-repo-ws/feature-x";
+    const workspacePath = `${WORKSPACES_DIR_CUSTOM}/feature-x`;
+    process.cwd = () => workspacePath;
     mockExistsSync.mockImplementation(
-      (path) =>
-        path === "/home/user/my-repo-ws/feature-x/.jj" ||
-        path === "/home/user/my-repo-ws/feature-x/.jj/repo"
+      (path) => path === `${workspacePath}/.jj` || path === `${workspacePath}/.jj/repo`
     );
     mockStatSync.mockReturnValue({ isDirectory: () => false } as ReturnType<typeof statSync>);
-    mockReadFileSync.mockReturnValue("/home/user/my-repo/.jj/repo");
+    mockReadFileSync.mockReturnValue(JJ_REPO);
 
-    expect(getWorkspacesDir("-ws")).toBe("/home/user/my-repo-ws");
+    expect(getWorkspacesDir("-ws")).toBe(WORKSPACES_DIR_CUSTOM);
   });
 
   test("uses empty string suffix when explicitly passed", () => {
-    process.cwd = () => "/home/user/my-repo";
-    mockExistsSync.mockImplementation(
-      (path) => path === "/home/user/my-repo/.jj" || path === "/home/user/my-repo/.jj/repo"
-    );
+    process.cwd = () => REPO_ROOT;
+    mockExistsSync.mockImplementation((path) => path === JJ_DIR || path === JJ_REPO);
     mockStatSync.mockReturnValue({ isDirectory: () => true } as ReturnType<typeof statSync>);
 
-    expect(getWorkspacesDir("")).toBe("/home/user/my-repo");
+    expect(getWorkspacesDir("")).toBe(REPO_ROOT);
   });
 
   test("throws when .jj/repo does not exist", () => {
-    process.cwd = () => "/home/user/my-repo";
-    mockExistsSync.mockImplementation((path) => path === "/home/user/my-repo/.jj");
+    process.cwd = () => REPO_ROOT;
+    mockExistsSync.mockImplementation((path) => path === JJ_DIR);
 
     expect(() => getWorkspacesDir()).toThrow("Could not find .jj/repo");
   });
@@ -369,64 +364,56 @@ describe("getWorkspacePath", () => {
   });
 
   test("returns <workspacesDir>/<name> when .jj/repo is a directory and no suffix given", () => {
-    process.cwd = () => "/home/user/my-repo";
-    mockExistsSync.mockImplementation(
-      (path) => path === "/home/user/my-repo/.jj" || path === "/home/user/my-repo/.jj/repo"
-    );
+    process.cwd = () => REPO_ROOT;
+    mockExistsSync.mockImplementation((path) => path === JJ_DIR || path === JJ_REPO);
     mockStatSync.mockReturnValue({ isDirectory: () => true } as ReturnType<typeof statSync>);
 
-    expect(getWorkspacePath("feature-x")).toBe("/home/user/my-repo__ws/feature-x");
+    expect(getWorkspacePath("feature-x")).toBe(`${WORKSPACES_DIR_DEFAULT}/feature-x`);
   });
 
   test("returns <workspacesDir>/<name> with custom suffix", () => {
-    process.cwd = () => "/home/user/my-repo";
-    mockExistsSync.mockImplementation(
-      (path) => path === "/home/user/my-repo/.jj" || path === "/home/user/my-repo/.jj/repo"
-    );
+    process.cwd = () => REPO_ROOT;
+    mockExistsSync.mockImplementation((path) => path === JJ_DIR || path === JJ_REPO);
     mockStatSync.mockReturnValue({ isDirectory: () => true } as ReturnType<typeof statSync>);
 
-    expect(getWorkspacePath("feature-x", "-ws")).toBe("/home/user/my-repo-ws/feature-x");
+    expect(getWorkspacePath("feature-x", "-ws")).toBe(`${WORKSPACES_DIR_CUSTOM}/feature-x`);
   });
 
   test("resolves correctly when in a linked workspace via .jj/repo file", () => {
-    process.cwd = () => "/home/user/my-repo__ws/feature-x";
+    const workspacePath = `${WORKSPACES_DIR_DEFAULT}/feature-x`;
+    process.cwd = () => workspacePath;
     mockExistsSync.mockImplementation(
-      (path) =>
-        path === "/home/user/my-repo__ws/feature-x/.jj" ||
-        path === "/home/user/my-repo__ws/feature-x/.jj/repo"
+      (path) => path === `${workspacePath}/.jj` || path === `${workspacePath}/.jj/repo`
     );
     mockStatSync.mockReturnValue({ isDirectory: () => false } as ReturnType<typeof statSync>);
-    mockReadFileSync.mockReturnValue("/home/user/my-repo/.jj/repo");
+    mockReadFileSync.mockReturnValue(JJ_REPO);
 
-    expect(getWorkspacePath("bugfix-1")).toBe("/home/user/my-repo__ws/bugfix-1");
+    expect(getWorkspacePath("bugfix-1")).toBe(`${WORKSPACES_DIR_DEFAULT}/bugfix-1`);
   });
 
   test("resolves correctly when in a linked workspace with custom suffix", () => {
-    process.cwd = () => "/home/user/my-repo-ws/feature-x";
+    const workspacePath = `${WORKSPACES_DIR_CUSTOM}/feature-x`;
+    process.cwd = () => workspacePath;
     mockExistsSync.mockImplementation(
-      (path) =>
-        path === "/home/user/my-repo-ws/feature-x/.jj" ||
-        path === "/home/user/my-repo-ws/feature-x/.jj/repo"
+      (path) => path === `${workspacePath}/.jj` || path === `${workspacePath}/.jj/repo`
     );
     mockStatSync.mockReturnValue({ isDirectory: () => false } as ReturnType<typeof statSync>);
-    mockReadFileSync.mockReturnValue("/home/user/my-repo/.jj/repo");
+    mockReadFileSync.mockReturnValue(JJ_REPO);
 
-    expect(getWorkspacePath("bugfix-1", "-ws")).toBe("/home/user/my-repo-ws/bugfix-1");
+    expect(getWorkspacePath("bugfix-1", "-ws")).toBe(`${WORKSPACES_DIR_CUSTOM}/bugfix-1`);
   });
 
   test("uses empty string suffix when explicitly passed", () => {
-    process.cwd = () => "/home/user/my-repo";
-    mockExistsSync.mockImplementation(
-      (path) => path === "/home/user/my-repo/.jj" || path === "/home/user/my-repo/.jj/repo"
-    );
+    process.cwd = () => REPO_ROOT;
+    mockExistsSync.mockImplementation((path) => path === JJ_DIR || path === JJ_REPO);
     mockStatSync.mockReturnValue({ isDirectory: () => true } as ReturnType<typeof statSync>);
 
-    expect(getWorkspacePath("feature-x", "")).toBe("/home/user/my-repo/feature-x");
+    expect(getWorkspacePath("feature-x", "")).toBe(`${REPO_ROOT}/feature-x`);
   });
 
   test("throws when .jj/repo does not exist", () => {
-    process.cwd = () => "/home/user/my-repo";
-    mockExistsSync.mockImplementation((path) => path === "/home/user/my-repo/.jj");
+    process.cwd = () => REPO_ROOT;
+    mockExistsSync.mockImplementation((path) => path === JJ_DIR);
 
     expect(() => getWorkspacePath("feature-x")).toThrow("Could not find .jj/repo");
   });
