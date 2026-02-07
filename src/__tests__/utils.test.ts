@@ -4,7 +4,6 @@ import {
   copyFileOrDir,
   execCommand,
   getJjWorkspaceList,
-  getRepoName,
   getRepoRoot,
   getWorkspacePath,
   getWorkspacesDir,
@@ -176,65 +175,6 @@ describe("getRepoRoot", () => {
     getRepoRoot();
 
     expect(mockExistsSync).toHaveBeenCalledWith("/repo/.jj");
-  });
-});
-
-describe("getRepoName", () => {
-  const mockExistsSync = vi.mocked(existsSync);
-  const mockStatSync = vi.mocked(statSync);
-  const mockReadFileSync = vi.mocked(readFileSync);
-  const originalCwd = process.cwd;
-
-  beforeEach(() => {
-    mockExistsSync.mockReset();
-    mockStatSync.mockReset();
-    mockReadFileSync.mockReset();
-    process.cwd = originalCwd;
-  });
-
-  test("returns directory name when .jj/repo is a directory", () => {
-    process.cwd = () => REPO_ROOT;
-    mockExistsSync.mockImplementation((path) => path === JJ_DIR || path === JJ_REPO);
-    mockStatSync.mockReturnValue({ isDirectory: () => true } as ReturnType<typeof statSync>);
-
-    expect(getRepoName()).toBe("my-repo");
-  });
-
-  test("returns default workspace name when .jj/repo is a file", () => {
-    const workspacePath = `${WORKSPACES_DIR_DEFAULT}/feature-x`;
-    process.cwd = () => workspacePath;
-    mockExistsSync.mockImplementation(
-      (path) => path === `${workspacePath}/.jj` || path === `${workspacePath}/.jj/repo`
-    );
-    mockStatSync.mockReturnValue({ isDirectory: () => false } as ReturnType<typeof statSync>);
-    mockReadFileSync.mockReturnValue(JJ_REPO);
-
-    expect(getRepoName()).toBe("my-repo");
-  });
-
-  test("returns correct name for deeply nested cwd", () => {
-    const projectRoot = "/home/user/project";
-    process.cwd = () => `${projectRoot}/src/deep`;
-    mockExistsSync.mockImplementation(
-      (path) => path === `${projectRoot}/.jj` || path === `${projectRoot}/.jj/repo`
-    );
-    mockStatSync.mockReturnValue({ isDirectory: () => true } as ReturnType<typeof statSync>);
-
-    expect(getRepoName()).toBe("project");
-  });
-
-  test("throws when .jj/repo does not exist", () => {
-    process.cwd = () => REPO_ROOT;
-    mockExistsSync.mockImplementation((path) => path === JJ_DIR);
-
-    expect(() => getRepoName()).toThrow("Could not find .jj/repo");
-  });
-
-  test("throws NotJujutsuRepositoryError when .jj is not found", () => {
-    process.cwd = () => "/home/user/no-repo";
-    mockExistsSync.mockReturnValue(false);
-
-    expect(() => getRepoName()).toThrow(NotJujutsuRepositoryError);
   });
 });
 

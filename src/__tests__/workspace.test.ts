@@ -18,7 +18,6 @@ const mockGetJjWorkspaceList = vi.fn();
 const mockGetRepoRoot = vi.fn();
 const mockGetWorkspacePath = vi.fn();
 const mockGetWorkspacesDir = vi.fn();
-const mockNormalizeWorkspaceName = vi.fn();
 const mockRemoveDir = vi.fn();
 
 vi.mock("node:fs", () => ({
@@ -46,7 +45,6 @@ vi.mock(import("../utils.ts"), async (importActual) => {
     getRepoRoot: mockGetRepoRoot,
     getWorkspacePath: mockGetWorkspacePath,
     getWorkspacesDir: mockGetWorkspacesDir,
-    normalizeWorkspaceName: mockNormalizeWorkspaceName,
     removeDir: mockRemoveDir,
   };
 });
@@ -70,7 +68,6 @@ beforeEach(() => {
   });
   mockInitConfig.mockResolvedValue(undefined);
   mockGetConfigPath.mockReturnValue("/repo/.jwconfig");
-  mockNormalizeWorkspaceName.mockImplementation((name: string) => name.replace(/\//g, "-"));
   mockGetWorkspacePath.mockImplementation((name: string) => `/repo__ws/${name}`);
   mockGetWorkspacesDir.mockReturnValue("/repo__ws");
   mockGetDefaultWorkspacePath.mockReturnValue("/repo");

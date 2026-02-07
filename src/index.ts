@@ -63,7 +63,7 @@ export function generateBashCompletion(): void {
             fi
             COMPREPLY=($(compgen -W "-r --revision" -- "$cur"))
             ;;
-        go|copy)
+        go|copy|rename)
             if [[ $cword -eq 2 ]]; then
                 local workspaces
                 workspaces=$(jj workspace list 2>/dev/null | cut -d: -f1)
@@ -74,13 +74,6 @@ export function generateBashCompletion(): void {
             if [[ $cword -eq 2 ]]; then
                 local workspaces
                 workspaces=$(jj workspace list 2>/dev/null | cut -d: -f1 | command grep -v "^default$")
-                COMPREPLY=($(compgen -W "$workspaces" -- "$cur"))
-            fi
-            ;;
-        rename)
-            if [[ $cword -eq 2 ]]; then
-                local workspaces
-                workspaces=$(jj workspace list 2>/dev/null | cut -d: -f1)
                 COMPREPLY=($(compgen -W "$workspaces" -- "$cur"))
             fi
             ;;

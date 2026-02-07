@@ -34,11 +34,6 @@ export function getRepoRoot(): string {
   throw new NotJujutsuRepositoryError();
 }
 
-export function getRepoName(): string {
-  const defaultPath = getDefaultWorkspacePath();
-  return basename(defaultPath);
-}
-
 export function getDefaultWorkspacePath(): string {
   const currentWorkspaceRoot = getRepoRoot();
   const repoPath = join(currentWorkspaceRoot, JJ_DIR, "repo");

@@ -68,17 +68,6 @@ export async function loadConfig(): Promise<Config> {
   }
 }
 
-export async function saveConfig(config: Config): Promise<void> {
-  const configPath = getConfigPath();
-
-  try {
-    await Bun.write(configPath, JSON.stringify(config, null, 2));
-  } catch (error) {
-    console.error(`Failed to save config file: ${error}`);
-    throw error;
-  }
-}
-
 export async function initConfig(): Promise<void> {
   const configPath = getConfigPath();
 

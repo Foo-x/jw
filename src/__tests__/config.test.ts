@@ -1,6 +1,6 @@
 import { existsSync } from "node:fs";
 import { beforeEach, describe, expect, type Mock, test, vi } from "vitest";
-import { getConfigPath, initConfig, loadConfig, parseConfig, saveConfig } from "../config.ts";
+import { getConfigPath, initConfig, loadConfig, parseConfig } from "../config.ts";
 import { ConfigAlreadyExistsError } from "../errors.ts";
 import { getDefaultWorkspacePath } from "../utils.ts";
 
@@ -204,52 +204,6 @@ describe("loadConfig", () => {
     await loadConfig();
     expect(existsSync).toHaveBeenCalledWith(configPath);
     expect(globalThis.Bun.file).toHaveBeenCalledWith(configPath);
-  });
-});
-
-describe("saveConfig", () => {
-  const configPath = "/home/user/myrepo/.jwconfig";
-  let writeMock: Mock;
-
-  beforeEach(() => {
-    vi.mocked(getDefaultWorkspacePath).mockReturnValue("/home/user/myrepo");
-    writeMock = vi.mocked(vi.fn().mockResolvedValue(0));
-    globalThis.Bun = {
-      ...globalThis.Bun,
-      write: writeMock,
-    };
-  });
-
-  test("writes config to the correct path", async () => {
-    const config = { copyFiles: [], postCreateCommands: [] };
-    await saveConfig(config);
-    expect(writeMock).toHaveBeenCalledWith(configPath, expect.any(String));
-  });
-
-  test("writes config as pretty-printed JSON", async () => {
-    const config = {
-      copyFiles: [".env"],
-      postCreateCommands: ["npm install"],
-      workspacesDirSuffix: "-ws",
-    };
-    await saveConfig(config);
-    expect(writeMock).toHaveBeenCalledWith(configPath, JSON.stringify(config, null, 2));
-  });
-
-  test("writes minimal config with no optional fields", async () => {
-    const config = { copyFiles: [], postCreateCommands: [] };
-    await saveConfig(config);
-    expect(writeMock).toHaveBeenCalledWith(configPath, JSON.stringify(config, null, 2));
-  });
-
-  test("throws and logs error when Bun.write fails", async () => {
-    const writeError = new Error("disk full");
-    writeMock.mockRejectedValue(writeError);
-    const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
-
-    await expect(saveConfig({ copyFiles: [], postCreateCommands: [] })).rejects.toThrow(writeError);
-    expect(consoleSpy).toHaveBeenCalledWith(expect.stringMatching(/Failed to save config file/));
-    consoleSpy.mockRestore();
   });
 });
 
