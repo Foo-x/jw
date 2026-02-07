@@ -31,6 +31,15 @@ async function resolveWorkspace(name: string): Promise<{
   return { config, normalizedName, workspacePath };
 }
 
+async function copyConfigFiles(config: Config, workspacePath: string): Promise<void> {
+  const repoRoot = getRepoRoot();
+  for (const file of config.copyFiles) {
+    const srcPath = join(repoRoot, file);
+    console.log(`Copying "${file}"...`);
+    await copyFileOrDir(srcPath, workspacePath);
+  }
+}
+
 export function formatDefaultWorkspaceLine(defaultPath: string, currentPath: string): string {
   const defaultMark = currentPath === defaultPath ? "*" : " ";
   return `${defaultMark} ${DEFAULT_WORKSPACE_NAME} (${defaultPath})`;
@@ -75,13 +84,7 @@ export async function newWorkspace(name: string, revision?: string): Promise<voi
     throw new JujutsuCommandError("create workspace", result.stderr);
   }
 
-  const repoRoot = getRepoRoot();
-
-  for (const file of config.copyFiles) {
-    const srcPath = join(repoRoot, file);
-    console.log(`Copying "${file}"...`);
-    await copyFileOrDir(srcPath, workspacePath);
-  }
+  await copyConfigFiles(config, workspacePath);
 
   for (const command of config.postCreateCommands) {
     console.log(`Running command: ${command}`);
@@ -158,15 +161,9 @@ export async function copyToWorkspace(name: string): Promise<void> {
     throw new WorkspaceNotFoundError(normalizedName);
   }
 
-  const repoRoot = getRepoRoot();
-
   console.log(`Copying files to workspace "${normalizedName}"...`);
 
-  for (const file of config.copyFiles) {
-    const srcPath = join(repoRoot, file);
-    console.log(`  Copying "${file}"...`);
-    await copyFileOrDir(srcPath, workspacePath);
-  }
+  await copyConfigFiles(config, workspacePath);
 
   console.log("Copy completed");
 }
