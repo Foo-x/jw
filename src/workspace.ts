@@ -40,6 +40,19 @@ async function copyConfigFiles(config: Config, workspacePath: string): Promise<v
   }
 }
 
+async function runPostCreateCommands(commands: string[], workspacePath: string): Promise<void> {
+  for (const command of commands) {
+    console.log(`Running command: ${command}`);
+    const cmdParts = command.split(" ");
+    const cmdResult = await execCommand(cmdParts[0], cmdParts.slice(1), workspacePath);
+
+    if (cmdResult.exitCode !== 0) {
+      console.warn(`Command failed: ${command}`);
+      console.warn(cmdResult.stderr);
+    }
+  }
+}
+
 export function formatDefaultWorkspaceLine(defaultPath: string, currentPath: string): string {
   const defaultMark = currentPath === defaultPath ? "*" : " ";
   return `${defaultMark} ${DEFAULT_WORKSPACE_NAME} (${defaultPath})`;
@@ -86,16 +99,7 @@ export async function newWorkspace(name: string, revision?: string): Promise<voi
 
   await copyConfigFiles(config, workspacePath);
 
-  for (const command of config.postCreateCommands) {
-    console.log(`Running command: ${command}`);
-    const cmdParts = command.split(" ");
-    const cmdResult = await execCommand(cmdParts[0], cmdParts.slice(1), workspacePath);
-
-    if (cmdResult.exitCode !== 0) {
-      console.warn(`Command failed: ${command}`);
-      console.warn(cmdResult.stderr);
-    }
-  }
+  await runPostCreateCommands(config.postCreateCommands, workspacePath);
 
   console.log(`Created workspace "${normalizedName}": ${workspacePath}`);
 }
