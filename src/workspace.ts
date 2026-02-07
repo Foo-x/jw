@@ -209,13 +209,13 @@ export async function cleanWorkspaces(): Promise<void> {
     if (ws === DEFAULT_WORKSPACE_NAME) continue;
 
     const { workspacePath: path } = await resolveWorkspace(ws);
-    if (!existsSync(path)) {
-      const result = await execCommand("jj", ["workspace", "forget", ws]);
-      if (result.exitCode === 0) {
-        forgottenWorkspaces.push(ws);
-      } else {
-        console.warn(`Failed to forget workspace "${ws}": ${result.stderr.trim()}`);
-      }
+    if (existsSync(path)) continue;
+
+    const result = await execCommand("jj", ["workspace", "forget", ws]);
+    if (result.exitCode === 0) {
+      forgottenWorkspaces.push(ws);
+    } else {
+      console.warn(`Failed to forget workspace "${ws}": ${result.stderr.trim()}`);
     }
   }
 
