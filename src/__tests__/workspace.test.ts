@@ -124,18 +124,7 @@ describe("newWorkspace", () => {
     expect(mockExecCommand).not.toHaveBeenCalled();
   });
 
-  test("creates workspace, copies files, and warns on command failure", async () => {
-    mockLoadConfig.mockResolvedValue({
-      copyFiles: ["README.md", ".env"],
-      postCreateCommands: ["npm install", "bun test"],
-      workspacesDirSuffix: "__ws",
-    });
-    mockExecCommand
-      .mockResolvedValueOnce({ stdout: "", stderr: "", exitCode: 0 })
-      .mockResolvedValueOnce({ stdout: "", stderr: "", exitCode: 0 })
-      .mockResolvedValueOnce({ stdout: "", stderr: "boom", exitCode: 1 })
-      .mockResolvedValueOnce({ stdout: "", stderr: "", exitCode: 0 });
-
+  test("creates workspace with revision", async () => {
     await workspace.newWorkspace("feature", "abc123");
 
     expect(mockExecCommand).toHaveBeenNthCalledWith(1, "mkdir", ["-p", "/repo__ws"]);
@@ -148,8 +137,35 @@ describe("newWorkspace", () => {
       "abc123",
       "/repo__ws/feature",
     ]);
+  });
+
+  test("copies configured files to new workspace", async () => {
+    mockLoadConfig.mockResolvedValue({
+      copyFiles: ["README.md", ".env"],
+      postCreateCommands: [],
+      workspacesDirSuffix: "__ws",
+    });
+
+    await workspace.newWorkspace("feature");
+
     expect(mockCopyFileOrDir).toHaveBeenCalledWith("/repo/README.md", "/repo__ws/feature");
     expect(mockCopyFileOrDir).toHaveBeenCalledWith("/repo/.env", "/repo__ws/feature");
+  });
+
+  test("warns when post-create command fails", async () => {
+    mockLoadConfig.mockResolvedValue({
+      copyFiles: [],
+      postCreateCommands: ["npm install", "bun test"],
+      workspacesDirSuffix: "__ws",
+    });
+    mockExecCommand
+      .mockResolvedValueOnce({ stdout: "", stderr: "", exitCode: 0 })
+      .mockResolvedValueOnce({ stdout: "", stderr: "", exitCode: 0 })
+      .mockResolvedValueOnce({ stdout: "", stderr: "boom", exitCode: 1 })
+      .mockResolvedValueOnce({ stdout: "", stderr: "", exitCode: 0 });
+
+    await workspace.newWorkspace("feature");
+
     expect(mockExecCommand).toHaveBeenCalledWith("npm", ["install"], "/repo__ws/feature");
     expect(mockExecCommand).toHaveBeenCalledWith("bun", ["test"], "/repo__ws/feature");
     expect(warnSpy).toHaveBeenCalledWith("Command failed: npm install");
