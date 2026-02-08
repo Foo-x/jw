@@ -83,6 +83,16 @@ Copies files specified in `.jwconfig` from the default workspace to the specifie
 jw clean
 ```
 
+### Switch default workspace to current revision
+
+```bash
+jw this
+```
+
+Switches the default workspace to the current workspace's revision. This is useful when you want to synchronize the default workspace with your work in another workspace.
+
+- Must be run from a non-default workspace
+
 ### Shell completion (bash)
 
 ```bash
