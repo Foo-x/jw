@@ -3,6 +3,7 @@ import { DEFAULT_WORKSPACE_NAME } from "../constants.ts";
 import {
   CannotRemoveDefaultWorkspaceError,
   JujutsuCommandError,
+  ValidationError,
   WorkspaceExistsError,
   WorkspaceNotFoundError,
 } from "../errors.ts";
@@ -19,6 +20,8 @@ const mockGetRepoRoot = vi.fn();
 const mockGetWorkspacePath = vi.fn();
 const mockGetWorkspacesDir = vi.fn();
 const mockRemoveDir = vi.fn();
+const mockGetCurrentWorkspaceName = vi.fn();
+const mockGetChangeIdFromWorkspaceList = vi.fn();
 
 vi.mock("node:fs", () => ({
   existsSync: mockExistsSync,
@@ -46,6 +49,8 @@ vi.mock(import("../utils.ts"), async (importActual) => {
     getWorkspacePath: mockGetWorkspacePath,
     getWorkspacesDir: mockGetWorkspacesDir,
     removeDir: mockRemoveDir,
+    getCurrentWorkspaceName: mockGetCurrentWorkspaceName,
+    getChangeIdFromWorkspaceList: mockGetChangeIdFromWorkspaceList,
   };
 });
 
@@ -77,6 +82,8 @@ beforeEach(() => {
   mockExistsSync.mockReturnValue(false);
   mockCopyFileOrDir.mockResolvedValue(undefined);
   mockRemoveDir.mockResolvedValue(undefined);
+  mockGetCurrentWorkspaceName.mockReturnValue("feature-x");
+  mockGetChangeIdFromWorkspaceList.mockReturnValue(null);
 });
 
 afterEach(() => {
@@ -335,5 +342,105 @@ describe("initWorkspace", () => {
     expect(mockGetRepoRoot).toHaveBeenCalled();
     expect(mockInitConfig).toHaveBeenCalled();
     expect(logSpy).toHaveBeenCalledWith("Initialized jw config: /repo/.jwconfig");
+  });
+});
+
+describe("thisWorkspace", () => {
+  test("throws ValidationError when in default workspace", async () => {
+    mockGetCurrentWorkspaceName.mockReturnValue("default");
+
+    await expect(workspace.thisWorkspace()).rejects.toBeInstanceOf(ValidationError);
+    await expect(workspace.thisWorkspace()).rejects.toThrow(
+      "Cannot run 'jw this' from default workspace"
+    );
+  });
+
+  test("executes jj edit with current change_id in default workspace directory", async () => {
+    mockGetCurrentWorkspaceName.mockReturnValue("feature-x");
+    mockExecCommand.mockResolvedValueOnce({
+      stdout: "feature-x: def789 commit000\n",
+      stderr: "",
+      exitCode: 0,
+    });
+    mockGetChangeIdFromWorkspaceList.mockReturnValue("def789");
+    mockExecCommand.mockResolvedValueOnce({
+      stdout: "",
+      stderr: "",
+      exitCode: 0,
+    });
+
+    await workspace.thisWorkspace();
+
+    expect(mockExecCommand).toHaveBeenNthCalledWith(1, "jj", ["workspace", "list"]);
+    expect(mockGetChangeIdFromWorkspaceList).toHaveBeenCalledWith(
+      "feature-x: def789 commit000\n",
+      "feature-x"
+    );
+    expect(mockExecCommand).toHaveBeenNthCalledWith(2, "jj", ["edit", "def789"], "/repo");
+  });
+
+  test("displays success message after jj edit succeeds", async () => {
+    mockGetCurrentWorkspaceName.mockReturnValue("feature-x");
+    mockExecCommand.mockResolvedValueOnce({
+      stdout: "feature-x: def789 commit000\n",
+      stderr: "",
+      exitCode: 0,
+    });
+    mockGetChangeIdFromWorkspaceList.mockReturnValue("def789");
+    mockExecCommand.mockResolvedValueOnce({
+      stdout: "",
+      stderr: "",
+      exitCode: 0,
+    });
+
+    await workspace.thisWorkspace();
+
+    expect(logSpy).toHaveBeenCalledWith('Switched default workspace to "feature-x" (def789)');
+  });
+
+  test("throws JujutsuCommandError when jj workspace list fails", async () => {
+    mockGetCurrentWorkspaceName.mockReturnValue("feature-x");
+    mockExecCommand.mockResolvedValueOnce({
+      stdout: "",
+      stderr: "fatal: not a jj repo\n",
+      exitCode: 1,
+    });
+
+    await expect(workspace.thisWorkspace()).rejects.toBeInstanceOf(JujutsuCommandError);
+  });
+
+  test("throws ValidationError when current workspace not found in list", async () => {
+    mockGetCurrentWorkspaceName.mockReturnValue("feature-x");
+    mockExecCommand.mockResolvedValue({
+      stdout: "default: abc123 commit456\n",
+      stderr: "",
+      exitCode: 0,
+    });
+    mockGetChangeIdFromWorkspaceList.mockReturnValue(null);
+
+    await expect(workspace.thisWorkspace()).rejects.toBeInstanceOf(ValidationError);
+    await expect(workspace.thisWorkspace()).rejects.toThrow(
+      'Current workspace "feature-x" not found in jj workspace list'
+    );
+  });
+
+  test("throws JujutsuCommandError when jj edit fails", async () => {
+    mockGetCurrentWorkspaceName.mockReturnValue("feature-x");
+    mockGetChangeIdFromWorkspaceList.mockReturnValue("def789");
+    mockExecCommand
+      .mockResolvedValueOnce({
+        stdout: "feature-x: def789 commit000\n",
+        stderr: "",
+        exitCode: 0,
+      })
+      .mockResolvedValueOnce({
+        stdout: "",
+        stderr: "error: no such revision\n",
+        exitCode: 1,
+      });
+
+    const error = await workspace.thisWorkspace().catch((e) => e);
+    expect(error).toBeInstanceOf(JujutsuCommandError);
+    expect(error.message).toContain("no such revision");
   });
 });

@@ -3,6 +3,8 @@ import { JujutsuCommandError, NotJujutsuRepositoryError } from "../errors.ts";
 import {
   copyFileOrDir,
   execCommand,
+  getChangeIdFromWorkspaceList,
+  getCurrentWorkspaceName,
   getJjWorkspaceList,
   getRepoRoot,
   getWorkspacePath,
@@ -547,5 +549,82 @@ describe("getJjWorkspaceList", () => {
     const result = await getJjWorkspaceList();
 
     expect(result).toEqual([]);
+  });
+});
+
+describe("getChangeIdFromWorkspaceList", () => {
+  test("extracts change_id for given workspace name", () => {
+    const output = "default: abc123 commit456\nfeature-x: def789 commit000\n";
+    expect(getChangeIdFromWorkspaceList(output, "feature-x")).toBe("def789");
+  });
+
+  test("extracts change_id for default workspace", () => {
+    const output = "default: abc123 commit456\nfeature-x: def789 commit000\n";
+    expect(getChangeIdFromWorkspaceList(output, "default")).toBe("abc123");
+  });
+
+  test("returns null when workspace not found", () => {
+    const output = "default: abc123 commit456\nfeature-x: def789 commit000\n";
+    expect(getChangeIdFromWorkspaceList(output, "nonexistent")).toBeNull();
+  });
+
+  test("returns null for empty output", () => {
+    expect(getChangeIdFromWorkspaceList("", "default")).toBeNull();
+  });
+
+  test("handles whitespace around workspace name", () => {
+    const output = "  feature-x : def789 commit000  \n";
+    expect(getChangeIdFromWorkspaceList(output, "feature-x")).toBe("def789");
+  });
+
+  test("returns null when line has no space after colon", () => {
+    const output = "feature-x:\n";
+    expect(getChangeIdFromWorkspaceList(output, "feature-x")).toBeNull();
+  });
+});
+
+describe("getCurrentWorkspaceName", () => {
+  const mockExistsSync = vi.mocked(existsSync);
+  const mockStatSync = vi.mocked(statSync);
+  const originalCwd = process.cwd;
+  const mockReadFileSync = vi.mocked(readFileSync);
+
+  beforeEach(() => {
+    mockExistsSync.mockReset();
+    mockStatSync.mockReset();
+    mockReadFileSync.mockReset();
+    process.cwd = originalCwd;
+  });
+
+  test("returns 'default' when in default workspace", () => {
+    process.cwd = () => REPO_ROOT;
+    mockExistsSync.mockImplementation((path) => path === JJ_DIR || path === JJ_REPO);
+    mockStatSync.mockReturnValue({ isDirectory: () => true } as ReturnType<typeof statSync>);
+
+    expect(getCurrentWorkspaceName()).toBe("default");
+  });
+
+  test("returns workspace name when in non-default workspace", () => {
+    const workspacePath = `${WORKSPACES_DIR_DEFAULT}/feature-x`;
+    process.cwd = () => workspacePath;
+    mockExistsSync.mockImplementation(
+      (path) => path === `${workspacePath}/.jj` || path === `${workspacePath}/.jj/repo`
+    );
+    mockStatSync.mockReturnValue({ isDirectory: () => false } as ReturnType<typeof statSync>);
+    mockReadFileSync.mockReturnValue(JJ_REPO);
+
+    expect(getCurrentWorkspaceName()).toBe("feature-x");
+  });
+
+  test("handles workspace names with hyphens", () => {
+    const workspacePath = `${WORKSPACES_DIR_DEFAULT}/feature-auth-login`;
+    process.cwd = () => workspacePath;
+    mockExistsSync.mockImplementation(
+      (path) => path === `${workspacePath}/.jj` || path === `${workspacePath}/.jj/repo`
+    );
+    mockStatSync.mockReturnValue({ isDirectory: () => false } as ReturnType<typeof statSync>);
+    mockReadFileSync.mockReturnValue(JJ_REPO);
+
+    expect(getCurrentWorkspaceName()).toBe("feature-auth-login");
   });
 });

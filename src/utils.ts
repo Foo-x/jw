@@ -1,6 +1,6 @@
 import { existsSync, readFileSync, statSync } from "node:fs";
 import { basename, dirname, join } from "node:path";
-import { JJ_DIR, WORKSPACES_DIR_SUFFIX } from "./constants.ts";
+import { DEFAULT_WORKSPACE_NAME, JJ_DIR, WORKSPACES_DIR_SUFFIX } from "./constants.ts";
 import { JujutsuCommandError, NotJujutsuRepositoryError } from "./errors.ts";
 
 export async function execCommand(
@@ -121,4 +121,46 @@ export async function getJjWorkspaceList(): Promise<string[]> {
     throw new JujutsuCommandError("list workspaces", result.stderr);
   }
   return parseJjWorkspaceList(result.stdout);
+}
+
+/**
+ * Extract the change_id for a given workspace from `jj workspace list` output.
+ * Output format: "workspace_name: change_id commit_id ..."
+ * Returns null if the workspace is not found or the line format is invalid.
+ */
+export function getChangeIdFromWorkspaceList(output: string, workspaceName: string): string | null {
+  if (!output.trim()) return null;
+
+  const lines = output.trim().split("\n");
+  for (const line of lines) {
+    const colonIndex = line.indexOf(":");
+    if (colonIndex <= 0) continue;
+
+    const name = line.substring(0, colonIndex).trim();
+    if (name !== workspaceName) continue;
+
+    const remainder = line.substring(colonIndex + 1).trim();
+    const parts = remainder.split(/\s+/);
+
+    if (parts.length === 0 || !parts[0]) return null;
+
+    return parts[0];
+  }
+
+  return null;
+}
+
+/**
+ * Get the name of the current workspace.
+ * Returns "default" if in the default workspace, otherwise returns the workspace name.
+ */
+export function getCurrentWorkspaceName(): string {
+  const currentWorkspaceRoot = getRepoRoot();
+  const defaultWorkspacePath = getDefaultWorkspacePath();
+
+  if (currentWorkspaceRoot === defaultWorkspacePath) {
+    return DEFAULT_WORKSPACE_NAME;
+  }
+
+  return basename(currentWorkspaceRoot);
 }

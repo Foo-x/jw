@@ -10,6 +10,7 @@ const mockListWorkspaces = vi.hoisted(() => vi.fn());
 const mockNewWorkspace = vi.hoisted(() => vi.fn());
 const mockRemoveWorkspace = vi.hoisted(() => vi.fn());
 const mockRenameWorkspace = vi.hoisted(() => vi.fn());
+const mockThisWorkspace = vi.hoisted(() => vi.fn());
 
 vi.mock(import("../workspace.ts"), () => ({
   cleanWorkspaces: mockCleanWorkspaces,
@@ -20,6 +21,7 @@ vi.mock(import("../workspace.ts"), () => ({
   newWorkspace: mockNewWorkspace,
   removeWorkspace: mockRemoveWorkspace,
   renameWorkspace: mockRenameWorkspace,
+  thisWorkspace: mockThisWorkspace,
 }));
 
 const originalArgv = process.argv;
@@ -42,6 +44,7 @@ beforeEach(() => {
   mockNewWorkspace.mockResolvedValue(undefined);
   mockRemoveWorkspace.mockResolvedValue(undefined);
   mockRenameWorkspace.mockResolvedValue(undefined);
+  mockThisWorkspace.mockResolvedValue(undefined);
   exitSpy = vi.spyOn(process, "exit").mockImplementation((code) => {
     throw code ?? 0;
   });
@@ -136,6 +139,14 @@ describe("index CLI", () => {
     await main();
 
     expect(mockCleanWorkspaces).toHaveBeenCalled();
+  });
+
+  test("runs this command", async () => {
+    setArgv(["this"]);
+
+    await main();
+
+    expect(mockThisWorkspace).toHaveBeenCalled();
   });
 
   test("prints help for help command", async () => {

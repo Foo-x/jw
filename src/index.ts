@@ -11,6 +11,7 @@ import {
   newWorkspace,
   removeWorkspace,
   renameWorkspace,
+  thisWorkspace,
 } from "./workspace.ts";
 
 function showHelp(): void {
@@ -26,6 +27,7 @@ Usage:
   jw rename <old> <new>          Rename a workspace
   jw copy <name>                 Copy files from default workspace to specified workspace
   jw clean                       Remove non-existent workspaces from config
+  jw this                        Switch default workspace to current workspace's revision
   jw completion <shell>          Generate completion script for the specified shell
   jw help                        Show this help
 `);
@@ -46,7 +48,7 @@ export function generateBashCompletion(): void {
     local cur prev words cword
     _init_completion || return
 
-    local subcommands="init new list go rm rename copy clean completion help"
+    local subcommands="init new list go rm rename copy clean this completion help"
 
     # Handle subcommand completion
     if [[ $cword -eq 1 ]]; then
@@ -159,6 +161,10 @@ export async function main() {
 
       case "clean":
         await cleanWorkspaces();
+        break;
+
+      case "this":
+        await thisWorkspace();
         break;
 
       case "completion":
