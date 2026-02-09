@@ -14,6 +14,8 @@ bunx tsc --noEmit    # Type check
 bun run src/index.ts # Run the CLI directly
 ```
 
+Read CLI commands from README.md.
+
 Running a single test file:
 ```bash
 bun run test src/__tests__/config.test.ts
@@ -27,7 +29,7 @@ A CLI tool for managing jujutsu (jj) workspaces. Runtime is Bun with no external
 
 ```
 index.ts        → CLI entry point. Parses arguments and dispatches commands via switch.
-workspace.ts    → Business logic for all workspace operations (new/list/go/rm/rename/copy/clean/init).
+workspace.ts    → Business logic for all workspace operations (new/list/go/rm/rename/copy/clean/init/this/use).
 config.ts       → Loading, parsing, and saving .jwconfig. Defines the Config interface.
 utils.ts        → Low-level functions: jj command execution, path resolution, file operations.
 errors.ts       → Custom exception classes extending JwError base class.
