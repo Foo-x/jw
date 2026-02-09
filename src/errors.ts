@@ -53,3 +53,10 @@ export class ConfigAlreadyExistsError extends JwError {
     this.name = "ConfigAlreadyExistsError";
   }
 }
+
+export class NotDefaultWorkspaceError extends JwError {
+  constructor() {
+    super("This command can only be used in the default workspace");
+    this.name = "NotDefaultWorkspaceError";
+  }
+}

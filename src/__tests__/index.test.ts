@@ -11,6 +11,7 @@ const mockNewWorkspace = vi.hoisted(() => vi.fn());
 const mockRemoveWorkspace = vi.hoisted(() => vi.fn());
 const mockRenameWorkspace = vi.hoisted(() => vi.fn());
 const mockThisWorkspace = vi.hoisted(() => vi.fn());
+const mockUseWorkspace = vi.hoisted(() => vi.fn());
 
 vi.mock(import("../workspace.ts"), () => ({
   cleanWorkspaces: mockCleanWorkspaces,
@@ -22,6 +23,7 @@ vi.mock(import("../workspace.ts"), () => ({
   removeWorkspace: mockRemoveWorkspace,
   renameWorkspace: mockRenameWorkspace,
   thisWorkspace: mockThisWorkspace,
+  useWorkspace: mockUseWorkspace,
 }));
 
 const originalArgv = process.argv;
@@ -45,6 +47,7 @@ beforeEach(() => {
   mockRemoveWorkspace.mockResolvedValue(undefined);
   mockRenameWorkspace.mockResolvedValue(undefined);
   mockThisWorkspace.mockResolvedValue(undefined);
+  mockUseWorkspace.mockResolvedValue(undefined);
   exitSpy = vi.spyOn(process, "exit").mockImplementation((code) => {
     throw code ?? 0;
   });
@@ -147,6 +150,25 @@ describe("index CLI", () => {
     await main();
 
     expect(mockThisWorkspace).toHaveBeenCalled();
+  });
+
+  test("runs use command with workspace name", async () => {
+    setArgv(["use", "feature"]);
+
+    await main();
+
+    expect(mockUseWorkspace).toHaveBeenCalledWith("feature");
+  });
+
+  test("reports validation error for missing use arg", async () => {
+    setArgv(["use"]);
+
+    const result = main();
+
+    await expect(result).rejects.toBe(1);
+    expect(errorSpy).toHaveBeenCalledWith(
+      "Error: Please specify a workspace name\nUsage: jw use <name>"
+    );
   });
 
   test("prints help for help command", async () => {

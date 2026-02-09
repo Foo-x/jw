@@ -5,6 +5,7 @@ import { DEFAULT_WORKSPACE_NAME } from "./constants.ts";
 import {
   CannotRemoveDefaultWorkspaceError,
   JujutsuCommandError,
+  NotDefaultWorkspaceError,
   ValidationError,
   WorkspaceExistsError,
   WorkspaceNotFoundError,
@@ -15,6 +16,7 @@ import {
   getChangeIdFromWorkspaceList,
   getCurrentWorkspaceName,
   getDefaultWorkspacePath,
+  getJjWorkspaceChangeId,
   getJjWorkspaceList,
   getRepoRoot,
   getWorkspacePath,
@@ -273,4 +275,33 @@ export async function thisWorkspace(): Promise<void> {
   }
 
   console.log(`Switched default workspace to "${currentWorkspaceName}" (${changeId})`);
+}
+
+export async function useWorkspace(name: string): Promise<void> {
+  if (!name) {
+    throw new ValidationError("Please specify a workspace name\nUsage: jw use <name>");
+  }
+
+  const normalizedName = normalizeWorkspaceName(name);
+
+  if (normalizedName === DEFAULT_WORKSPACE_NAME) {
+    throw new ValidationError("Cannot use the default workspace");
+  }
+
+  const currentPath = getRepoRoot();
+  const defaultPath = getDefaultWorkspacePath();
+
+  if (currentPath !== defaultPath) {
+    throw new NotDefaultWorkspaceError();
+  }
+
+  const changeId = await getJjWorkspaceChangeId(normalizedName);
+
+  const editResult = await execCommand("jj", ["edit", changeId], defaultPath);
+
+  if (editResult.exitCode !== 0) {
+    throw new JujutsuCommandError("edit revision", editResult.stderr);
+  }
+
+  console.log(`Switched default workspace to "${normalizedName}" (${changeId})`);
 }

@@ -1,7 +1,11 @@
 import { existsSync, readFileSync, statSync } from "node:fs";
 import { basename, dirname, join } from "node:path";
 import { DEFAULT_WORKSPACE_NAME, JJ_DIR, WORKSPACES_DIR_SUFFIX } from "./constants.ts";
-import { JujutsuCommandError, NotJujutsuRepositoryError } from "./errors.ts";
+import {
+  JujutsuCommandError,
+  NotJujutsuRepositoryError,
+  WorkspaceNotFoundError,
+} from "./errors.ts";
 
 export async function execCommand(
   command: string,
@@ -163,4 +167,23 @@ export function getCurrentWorkspaceName(): string {
   }
 
   return basename(currentWorkspaceRoot);
+}
+
+/**
+ * Get the change_id for a given workspace by executing `jj workspace list`.
+ * Throws WorkspaceNotFoundError if the workspace is not found.
+ * Throws JujutsuCommandError if `jj workspace list` fails.
+ */
+export async function getJjWorkspaceChangeId(workspaceName: string): Promise<string> {
+  const result = await execCommand("jj", ["workspace", "list"]);
+  if (result.exitCode !== 0) {
+    throw new JujutsuCommandError("list workspaces", result.stderr);
+  }
+
+  const changeId = getChangeIdFromWorkspaceList(result.stdout, workspaceName);
+  if (!changeId) {
+    throw new WorkspaceNotFoundError(workspaceName);
+  }
+
+  return changeId;
 }

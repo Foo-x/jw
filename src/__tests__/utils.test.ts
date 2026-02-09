@@ -1,10 +1,15 @@
 import { beforeEach, describe, expect, test, vi } from "vitest";
-import { JujutsuCommandError, NotJujutsuRepositoryError } from "../errors.ts";
+import {
+  JujutsuCommandError,
+  NotJujutsuRepositoryError,
+  WorkspaceNotFoundError,
+} from "../errors.ts";
 import {
   copyFileOrDir,
   execCommand,
   getChangeIdFromWorkspaceList,
   getCurrentWorkspaceName,
+  getJjWorkspaceChangeId,
   getJjWorkspaceList,
   getRepoRoot,
   getWorkspacePath,
@@ -626,5 +631,31 @@ describe("getCurrentWorkspaceName", () => {
     mockReadFileSync.mockReturnValue(JJ_REPO);
 
     expect(getCurrentWorkspaceName()).toBe("feature-auth-login");
+  });
+});
+
+describe("getJjWorkspaceChangeId", () => {
+  beforeEach(() => {
+    mockSpawn("", "", 0);
+  });
+
+  test("returns change_id when workspace exists", async () => {
+    mockSpawn("default: abc123 commit456\nfeature-x: def789 commit000\n", "", 0);
+
+    const result = await getJjWorkspaceChangeId("feature-x");
+
+    expect(result).toBe("def789");
+  });
+
+  test("throws WorkspaceNotFoundError when workspace does not exist", async () => {
+    mockSpawn("default: abc123 commit456\n", "", 0);
+
+    await expect(getJjWorkspaceChangeId("nonexistent")).rejects.toThrow(WorkspaceNotFoundError);
+  });
+
+  test("throws JujutsuCommandError when jj workspace list fails", async () => {
+    mockSpawn("", "fatal: not a jj repo\n", 1);
+
+    await expect(getJjWorkspaceChangeId("feature-x")).rejects.toThrow(JujutsuCommandError);
   });
 });
