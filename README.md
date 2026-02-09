@@ -93,6 +93,16 @@ Switches the default workspace to the current workspace's revision. This is usef
 
 - Must be run from a non-default workspace
 
+### Use revision from a workspace
+
+```bash
+jw use <name>
+```
+
+Switches the default workspace to the specified workspace's revision. This is useful when you want to switch to another workspace's revision from the default workspace.
+
+- Must be run from the default workspace
+
 ### Shell completion (bash)
 
 ```bash
