@@ -103,6 +103,12 @@ Switches the default workspace to the specified workspace's revision. This is us
 
 - Must be run from the default workspace
 
+### Show version
+
+```bash
+jw version
+```
+
 ### Shell completion (bash)
 
 ```bash

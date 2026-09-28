@@ -1,5 +1,6 @@
 #!/usr/bin/env bun
 
+import pkg from "../package.json" with { type: "json" };
 import { DEFAULT_WORKSPACE_NAME, SUPPORTED_SHELLS } from "./constants.ts";
 import { JwError, ValidationError } from "./errors.ts";
 import {
@@ -31,6 +32,7 @@ Usage:
   jw this                        Switch default workspace to current workspace's revision
   jw use <name>                  Use the revision from specified workspace
   jw completion <shell>          Generate completion script for the specified shell
+  jw version                     Show version
   jw help                        Show this help
 `);
 }
@@ -50,7 +52,7 @@ export function generateBashCompletion(): void {
     local cur prev words cword
     _init_completion || return
 
-    local subcommands="init new list go rm rename copy clean this use completion help"
+    local subcommands="init new list go rm rename copy clean this use completion version help"
 
     # Handle subcommand completion
     if [[ $cword -eq 1 ]]; then
@@ -185,6 +187,12 @@ export async function main() {
             `Unsupported shell "${args[1]}"\nSupported shells: ${SUPPORTED_SHELLS.join(", ")}`
           );
         }
+        break;
+
+      case "version":
+      case "--version":
+      case "-v":
+        console.log(pkg.version);
         break;
 
       case "help":

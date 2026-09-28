@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
+import pkg from "../../package.json" with { type: "json" };
 import { DEFAULT_WORKSPACE_NAME } from "../constants.ts";
 import { main } from "../index.ts";
 
@@ -193,6 +194,14 @@ describe("index CLI", () => {
     await main();
 
     expect(logSpy.mock.calls[0]?.[0]).toContain("Usage");
+  });
+
+  test.each(["version", "--version", "-v"])("prints version for %s", async (arg) => {
+    setArgv([arg]);
+
+    await main();
+
+    expect(logSpy).toHaveBeenCalledWith(pkg.version);
   });
 
   test("outputs bash completion", async () => {
