@@ -1,5 +1,5 @@
 import { existsSync, readFileSync, statSync } from "node:fs";
-import { basename, dirname, join } from "node:path";
+import { basename, dirname, join, resolve } from "node:path";
 import { DEFAULT_WORKSPACE_NAME, JJ_DIR, WORKSPACES_DIR_SUFFIX } from "./constants.ts";
 import {
   JujutsuCommandError,
@@ -26,16 +26,17 @@ export async function execCommand(
 }
 
 export function getRepoRoot(): string {
-  let currentDir = process.cwd();
+  const result = Bun.spawnSync(["jj", "workspace", "root", "--ignore-working-copy"], {
+    cwd: process.cwd(),
+    stdout: "pipe",
+    stderr: "pipe",
+  });
 
-  while (currentDir !== "/") {
-    if (existsSync(join(currentDir, JJ_DIR))) {
-      return currentDir;
-    }
-    currentDir = dirname(currentDir);
+  if (result.exitCode !== 0) {
+    throw new NotJujutsuRepositoryError();
   }
 
-  throw new NotJujutsuRepositoryError();
+  return result.stdout.toString().trim();
 }
 
 export function getDefaultWorkspacePath(): string {
@@ -55,9 +56,10 @@ export function getDefaultWorkspacePath(): string {
 
   // If .jj/repo is a file, read it to get the default workspace path
   const repoStorePathContent = readFileSync(repoPath, "utf-8").trim();
-  // .jj/repo contains path to .jj/repo/store
-  // Go up two levels to get the default workspace root
-  return dirname(dirname(repoStorePathContent));
+  // The path may be relative to the .jj directory, so resolve it to an absolute path
+  const repoStorePath = resolve(dirname(repoPath), repoStorePathContent);
+  // Go up two levels (.jj/repo) to get the default workspace root
+  return dirname(dirname(repoStorePath));
 }
 
 export function getWorkspacesDirName(repoName: string, suffix: string | undefined): string {
