@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, test, vi } from "vitest";
 import {
+  InvalidWorkspaceNameError,
   JujutsuCommandError,
   NotJujutsuRepositoryError,
   WorkspaceNotFoundError,
@@ -179,8 +180,17 @@ describe("normalizeWorkspaceName", () => {
     expect(normalizeWorkspaceName("feature-login")).toBe("feature-login");
   });
 
-  test("handles empty string", () => {
-    expect(normalizeWorkspaceName("")).toBe("");
+  test("throws on empty string", () => {
+    expect(() => normalizeWorkspaceName("")).toThrow(InvalidWorkspaceNameError);
+  });
+
+  test("throws on . and ..", () => {
+    expect(() => normalizeWorkspaceName(".")).toThrow(InvalidWorkspaceNameError);
+    expect(() => normalizeWorkspaceName("..")).toThrow(InvalidWorkspaceNameError);
+  });
+
+  test("allows names that merely contain dots", () => {
+    expect(normalizeWorkspaceName("a/..")).toBe("a-..");
   });
 
   test("handles string with only slashes", () => {

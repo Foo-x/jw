@@ -3,7 +3,9 @@ import { join } from "node:path";
 import { type Config, getConfigPath, initConfig, loadConfig } from "./config.ts";
 import { DEFAULT_WORKSPACE_NAME } from "./constants.ts";
 import {
+  CannotRemoveCurrentWorkspaceError,
   CannotRemoveDefaultWorkspaceError,
+  CannotRenameDefaultWorkspaceError,
   JujutsuCommandError,
   NotDefaultWorkspaceError,
   ValidationError,
@@ -148,6 +150,10 @@ export async function removeWorkspace(name: string): Promise<void> {
     throw new CannotRemoveDefaultWorkspaceError();
   }
 
+  if (getRepoRoot() === workspacePath) {
+    throw new CannotRemoveCurrentWorkspaceError();
+  }
+
   console.log(`Removing workspace "${normalizedName}"...`);
 
   const result = await execCommand("jj", ["workspace", "forget", normalizedName]);
@@ -182,6 +188,10 @@ export async function renameWorkspace(oldName: string, newName: string): Promise
     await resolveWorkspace(oldName);
   const { normalizedName: normalizedNewName, workspacePath: newPath } =
     await resolveWorkspace(newName);
+
+  if (normalizedOldName === DEFAULT_WORKSPACE_NAME) {
+    throw new CannotRenameDefaultWorkspaceError();
+  }
 
   if (!existsSync(oldPath)) {
     throw new WorkspaceNotFoundError(normalizedOldName);

@@ -41,3 +41,9 @@ Removes a workspace.
 - **User story**: As a developer, if jj cannot forget the workspace (e.g. it is unknown to jj), I want a warning while the directory is still removed, so that leftovers are cleaned up.
 - **Rationale**: The goal is to end up with no workspace; a stale directory should not survive because jj has no record.
 - **EARS**: IF `jj workspace forget` exits with a non-zero code, THEN the jw CLI SHALL print a warning that includes jj's stderr, continue to delete the directory, and finish with exit code 0.
+
+### RM-E-04: Removing the current workspace
+
+- **User story**: As a developer, if I try to remove the workspace I am in, I want it refused, so that my shell is not left in a deleted directory.
+- **Rationale**: Deleting the current directory breaks subsequent commands run from it.
+- **EARS**: IF the workspace path equals the root of the current workspace, THEN the jw CLI SHALL print `Error: Cannot remove the current workspace` to stderr, change nothing, and exit with code 1.

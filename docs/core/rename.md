@@ -41,3 +41,9 @@ Renames a workspace.
 - **User story**: As a developer, if jj cannot rename the workspace, I want the directory left untouched, so that names and paths stay consistent.
 - **Rationale**: Moving the directory after a failed jj rename would desynchronize them.
 - **EARS**: IF `jj workspace rename` exits with a non-zero code, THEN the jw CLI SHALL print an error that includes jj's stderr to stderr, not move the directory, and exit with code 1.
+
+### RENAME-E-05: Renaming the default workspace
+
+- **User story**: As a developer, if I try to rename the default workspace, I want it refused, so that the main repository is not moved.
+- **Rationale**: The default workspace root holds the repository store and is not located under the workspaces directory.
+- **EARS**: IF the old name is `default`, THEN the jw CLI SHALL print `Error: Cannot rename the default workspace` to stderr, change nothing, and exit with code 1.

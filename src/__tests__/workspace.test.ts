@@ -1,7 +1,9 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, test, vi } from "vitest";
 import { DEFAULT_WORKSPACE_NAME } from "../constants.ts";
 import {
+  CannotRemoveCurrentWorkspaceError,
   CannotRemoveDefaultWorkspaceError,
+  CannotRenameDefaultWorkspaceError,
   JujutsuCommandError,
   NotDefaultWorkspaceError,
   ValidationError,
@@ -229,6 +231,16 @@ describe("removeWorkspace", () => {
     );
   });
 
+  test("throws when removing the current workspace", async () => {
+    mockGetRepoRoot.mockReturnValue("/repo__ws/feature");
+
+    await expect(workspace.removeWorkspace("feature")).rejects.toBeInstanceOf(
+      CannotRemoveCurrentWorkspaceError
+    );
+    expect(mockExecCommand).not.toHaveBeenCalled();
+    expect(mockRemoveDir).not.toHaveBeenCalled();
+  });
+
   test("forgets and removes workspace, warning on jj failure", async () => {
     mockExistsSync.mockImplementation((path: string) => path === "/repo__ws/feature");
     mockExecCommand.mockResolvedValueOnce({
@@ -268,6 +280,15 @@ describe("copyToWorkspace", () => {
 });
 
 describe("renameWorkspace", () => {
+  test("throws when renaming the default workspace", async () => {
+    mockExistsSync.mockReturnValue(true);
+
+    await expect(workspace.renameWorkspace(DEFAULT_WORKSPACE_NAME, "new")).rejects.toBeInstanceOf(
+      CannotRenameDefaultWorkspaceError
+    );
+    expect(mockExecCommand).not.toHaveBeenCalled();
+  });
+
   test("throws when old workspace is missing", async () => {
     await expect(workspace.renameWorkspace("old", "new")).rejects.toBeInstanceOf(
       WorkspaceNotFoundError

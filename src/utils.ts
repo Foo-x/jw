@@ -2,6 +2,7 @@ import { existsSync, readFileSync, statSync } from "node:fs";
 import { basename, dirname, join, resolve } from "node:path";
 import { DEFAULT_WORKSPACE_NAME, JJ_DIR, WORKSPACES_DIR_SUFFIX } from "./constants.ts";
 import {
+  InvalidWorkspaceNameError,
   JujutsuCommandError,
   NotJujutsuRepositoryError,
   WorkspaceNotFoundError,
@@ -99,7 +100,12 @@ export async function removeDir(path: string): Promise<void> {
 }
 
 export function normalizeWorkspaceName(name: string): string {
-  return name.replace(/\//g, "-");
+  const normalized = name.replace(/\//g, "-");
+  // "." and ".." would resolve outside the workspaces directory (e.g. `jw rm ..` deletes the repo's parent)
+  if (normalized === "" || normalized === "." || normalized === "..") {
+    throw new InvalidWorkspaceNameError(name);
+  }
+  return normalized;
 }
 
 /**

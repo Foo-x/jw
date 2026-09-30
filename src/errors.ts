@@ -40,6 +40,27 @@ export class CannotRemoveDefaultWorkspaceError extends JwError {
   }
 }
 
+export class CannotRemoveCurrentWorkspaceError extends JwError {
+  constructor() {
+    super("Cannot remove the current workspace");
+    this.name = "CannotRemoveCurrentWorkspaceError";
+  }
+}
+
+export class CannotRenameDefaultWorkspaceError extends JwError {
+  constructor() {
+    super("Cannot rename the default workspace");
+    this.name = "CannotRenameDefaultWorkspaceError";
+  }
+}
+
+export class InvalidWorkspaceNameError extends JwError {
+  constructor(name: string) {
+    super(`Invalid workspace name: "${name}"`);
+    this.name = "InvalidWorkspaceNameError";
+  }
+}
+
 export class NotJujutsuRepositoryError extends JwError {
   constructor() {
     super("Not a jujutsu repository (or any of the parent directories)");
