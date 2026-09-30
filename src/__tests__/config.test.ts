@@ -1,7 +1,7 @@
 import { existsSync } from "node:fs";
 import { beforeEach, describe, expect, type Mock, test, vi } from "vitest";
 import { getConfigPath, initConfig, loadConfig, parseConfig } from "../config.ts";
-import { ConfigAlreadyExistsError } from "../errors.ts";
+import { ConfigAlreadyExistsError, InvalidWorkspacesDirSuffixError } from "../errors.ts";
 import { getDefaultWorkspacePath } from "../utils.ts";
 
 vi.mock("node:fs", () => ({
@@ -117,6 +117,18 @@ describe("parseConfig - workspacesDirSuffix", () => {
   test("returns undefined workspacesDirSuffix when array", () => {
     const result = parseConfig({ workspacesDirSuffix: ["a"] });
     expect(result.workspacesDirSuffix).toBeUndefined();
+  });
+
+  test.each([
+    "/ws",
+    "../ws",
+    "a/b",
+    "\\ws",
+    "a\\b",
+  ])("throws when workspacesDirSuffix contains a path separator: %s", (suffix) => {
+    expect(() => parseConfig({ workspacesDirSuffix: suffix })).toThrow(
+      InvalidWorkspacesDirSuffixError
+    );
   });
 
   test("returns undefined workspacesDirSuffix when empty string", () => {

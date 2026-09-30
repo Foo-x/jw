@@ -8,7 +8,7 @@ Removes a workspace.
 
 - **User story**: As a developer, I want to delete a workspace in one step, so that both the jj registration and the directory are gone.
 - **Rationale**: Deleting only the directory leaves a stale jj entry; forgetting only in jj leaves files on disk.
-- **EARS**: WHEN the user runs `jw rm <name>`, the jw CLI SHALL run `jj workspace forget <name>`, delete the workspace directory if it exists, and print `Removed workspace "<name>"`.
+- **EARS**: WHEN the user runs `jw rm <name>`, the jw CLI SHALL run `jj workspace forget <name>`, then delete the workspace directory if it exists, and print `Removed workspace "<name>"`.
 
 ### RM-N-02: Directory already deleted
 
@@ -38,9 +38,9 @@ Removes a workspace.
 
 ### RM-E-03: `jj workspace forget` fails
 
-- **User story**: As a developer, if jj cannot forget the workspace (e.g. it is unknown to jj), I want a warning while the directory is still removed, so that leftovers are cleaned up.
-- **Rationale**: The goal is to end up with no workspace; a stale directory should not survive because jj has no record.
-- **EARS**: IF `jj workspace forget` exits with a non-zero code, THEN the jw CLI SHALL print a warning that includes jj's stderr, continue to delete the directory, and finish with exit code 0.
+- **User story**: As a developer, if jj cannot forget the workspace (e.g. it is unknown to jj), I want the directory left untouched and the jj error shown, so that a directory that is not a jj workspace is never deleted.
+- **Rationale**: A failed forget means jw cannot confirm the directory is a registered workspace; the directory may hold unrelated data (e.g. one created by hand under the workspaces directory). Deleting it would be unrecoverable data loss, while leftovers can be removed manually.
+- **EARS**: IF `jj workspace forget` exits with a non-zero code, THEN the jw CLI SHALL print an error that includes jj's stderr to stderr, not delete the directory, and exit with code 1.
 
 ### RM-E-04: Removing the current workspace
 

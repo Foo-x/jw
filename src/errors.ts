@@ -54,6 +54,20 @@ export class CannotRenameDefaultWorkspaceError extends JwError {
   }
 }
 
+export class CannotRenameCurrentWorkspaceError extends JwError {
+  constructor() {
+    super("Cannot rename the current workspace");
+    this.name = "CannotRenameCurrentWorkspaceError";
+  }
+}
+
+export class InvalidWorkspacesDirSuffixError extends JwError {
+  constructor(suffix: string) {
+    super(`Invalid workspacesDirSuffix: "${suffix}"`);
+    this.name = "InvalidWorkspacesDirSuffixError";
+  }
+}
+
 export class InvalidWorkspaceNameError extends JwError {
   constructor(name: string) {
     super(`Invalid workspace name: "${name}"`);

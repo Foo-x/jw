@@ -47,3 +47,9 @@ Renames a workspace.
 - **User story**: As a developer, if I try to rename the default workspace, I want it refused, so that the main repository is not moved.
 - **Rationale**: The default workspace root holds the repository store and is not located under the workspaces directory.
 - **EARS**: IF the old name is `default`, THEN the jw CLI SHALL print `Error: Cannot rename the default workspace` to stderr, change nothing, and exit with code 1.
+
+### RENAME-E-06: Renaming the current workspace
+
+- **User story**: As a developer, if I try to rename the workspace I am in, I want it refused, so that my shell is not left in a moved directory.
+- **Rationale**: Moving the current directory leaves the shell at a path that no longer exists, and jw derives the current workspace name from that path ([CC-PATH-06](../cross_cutting/workspace-path-resolution.md)). Same policy as [RM-E-04](./rm.md).
+- **EARS**: IF the old workspace path equals the root of the current workspace, THEN the jw CLI SHALL print `Error: Cannot rename the current workspace` to stderr, change nothing, and exit with code 1.

@@ -5,6 +5,7 @@ import { DEFAULT_WORKSPACE_NAME } from "./constants.ts";
 import {
   CannotRemoveCurrentWorkspaceError,
   CannotRemoveDefaultWorkspaceError,
+  CannotRenameCurrentWorkspaceError,
   CannotRenameDefaultWorkspaceError,
   JujutsuCommandError,
   NotDefaultWorkspaceError,
@@ -158,8 +159,9 @@ export async function removeWorkspace(name: string): Promise<void> {
 
   const result = await execCommand("jj", ["workspace", "forget", normalizedName]);
 
+  // Without a successful forget the directory may not be a workspace, so keep it
   if (result.exitCode !== 0) {
-    console.warn(`Failed to run jj workspace forget: ${result.stderr}`);
+    throw new JujutsuCommandError("forget workspace", result.stderr);
   }
 
   if (existsSync(workspacePath)) {
@@ -191,6 +193,10 @@ export async function renameWorkspace(oldName: string, newName: string): Promise
 
   if (normalizedOldName === DEFAULT_WORKSPACE_NAME) {
     throw new CannotRenameDefaultWorkspaceError();
+  }
+
+  if (getRepoRoot() === oldPath) {
+    throw new CannotRenameCurrentWorkspaceError();
   }
 
   if (!existsSync(oldPath)) {

@@ -1,7 +1,7 @@
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 import { CONFIG_FILE_NAME, WORKSPACES_DIR_SUFFIX } from "./constants.ts";
-import { ConfigAlreadyExistsError } from "./errors.ts";
+import { ConfigAlreadyExistsError, InvalidWorkspacesDirSuffixError } from "./errors.ts";
 import { getDefaultWorkspacePath } from "./utils.ts";
 
 export interface Config {
@@ -40,6 +40,11 @@ export function parseConfig(data: unknown): Config {
       ? obj.workspacesDirSuffix
       : undefined;
 
+  // A path separator would move the workspaces directory outside the sibling layout
+  if (workspacesDirSuffix !== undefined && /[/\\]/.test(workspacesDirSuffix)) {
+    throw new InvalidWorkspacesDirSuffixError(workspacesDirSuffix);
+  }
+
   return {
     copyFiles: isStringArray(obj.copyFiles) ? obj.copyFiles : defaults.copyFiles,
     postCreateCommands: isStringArray(obj.postCreateCommands)
@@ -56,16 +61,17 @@ export async function loadConfig(): Promise<Config> {
     return getDefaultConfig();
   }
 
+  let data: unknown;
   try {
     const file = Bun.file(configPath);
     const content = await file.text();
-    const data = JSON.parse(content);
-
-    return parseConfig(data);
+    data = JSON.parse(content);
   } catch (error) {
     console.error(`Failed to load config file: ${error}`);
     return getDefaultConfig();
   }
+
+  return parseConfig(data);
 }
 
 export async function initConfig(): Promise<void> {

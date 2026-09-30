@@ -3,6 +3,7 @@ import { DEFAULT_WORKSPACE_NAME } from "../constants.ts";
 import {
   CannotRemoveCurrentWorkspaceError,
   CannotRemoveDefaultWorkspaceError,
+  CannotRenameCurrentWorkspaceError,
   CannotRenameDefaultWorkspaceError,
   JujutsuCommandError,
   NotDefaultWorkspaceError,
@@ -241,7 +242,17 @@ describe("removeWorkspace", () => {
     expect(mockRemoveDir).not.toHaveBeenCalled();
   });
 
-  test("forgets and removes workspace, warning on jj failure", async () => {
+  test("forgets and removes workspace", async () => {
+    mockExistsSync.mockImplementation((path: string) => path === "/repo__ws/feature");
+
+    await workspace.removeWorkspace("feature");
+
+    expect(mockExecCommand).toHaveBeenCalledWith("jj", ["workspace", "forget", "feature"]);
+    expect(mockRemoveDir).toHaveBeenCalledWith("/repo__ws/feature");
+    expect(logSpy).toHaveBeenCalledWith('Removed workspace "feature"');
+  });
+
+  test("throws and keeps the directory when jj forget fails", async () => {
     mockExistsSync.mockImplementation((path: string) => path === "/repo__ws/feature");
     mockExecCommand.mockResolvedValueOnce({
       stdout: "",
@@ -249,12 +260,8 @@ describe("removeWorkspace", () => {
       exitCode: 1,
     });
 
-    await workspace.removeWorkspace("feature");
-
-    expect(mockExecCommand).toHaveBeenCalledWith("jj", ["workspace", "forget", "feature"]);
-    expect(warnSpy).toHaveBeenCalledWith("Failed to run jj workspace forget: boom");
-    expect(mockRemoveDir).toHaveBeenCalledWith("/repo__ws/feature");
-    expect(logSpy).toHaveBeenCalledWith('Removed workspace "feature"');
+    await expect(workspace.removeWorkspace("feature")).rejects.toBeInstanceOf(JujutsuCommandError);
+    expect(mockRemoveDir).not.toHaveBeenCalled();
   });
 });
 
@@ -285,6 +292,16 @@ describe("renameWorkspace", () => {
 
     await expect(workspace.renameWorkspace(DEFAULT_WORKSPACE_NAME, "new")).rejects.toBeInstanceOf(
       CannotRenameDefaultWorkspaceError
+    );
+    expect(mockExecCommand).not.toHaveBeenCalled();
+  });
+
+  test("throws when renaming the current workspace", async () => {
+    mockExistsSync.mockReturnValue(true);
+    mockGetRepoRoot.mockReturnValue("/repo__ws/old");
+
+    await expect(workspace.renameWorkspace("old", "new")).rejects.toBeInstanceOf(
+      CannotRenameCurrentWorkspaceError
     );
     expect(mockExecCommand).not.toHaveBeenCalled();
   });
