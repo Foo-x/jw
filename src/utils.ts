@@ -1,12 +1,14 @@
 import { existsSync, readFileSync, statSync } from "node:fs";
-import { basename, dirname, join, resolve } from "node:path";
-import { DEFAULT_WORKSPACE_NAME, JJ_DIR, WORKSPACES_DIR_SUFFIX } from "./constants.ts";
+import { join } from "node:path";
+import { JJ_DIR } from "./constants.ts";
+import { WorkspaceNotFoundError } from "./domain/errors.ts";
 import {
-  InvalidWorkspaceNameError,
-  JujutsuCommandError,
-  NotJujutsuRepositoryError,
-  WorkspaceNotFoundError,
-} from "./errors.ts";
+  resolveCurrentWorkspaceName,
+  resolveDefaultWorkspaceFromRepoPointer,
+  resolveWorkspacePath,
+  resolveWorkspacesDir,
+} from "./domain/workspace.ts";
+import { JujutsuCommandError, NotJujutsuRepositoryError } from "./errors.ts";
 
 export async function execCommand(
   command: string,
@@ -56,26 +58,15 @@ export function getDefaultWorkspacePath(): string {
   }
 
   // If .jj/repo is a file, read it to get the default workspace path
-  const repoStorePathContent = readFileSync(repoPath, "utf-8").trim();
-  // The path may be relative to the .jj directory, so resolve it to an absolute path
-  const repoStorePath = resolve(dirname(repoPath), repoStorePathContent);
-  // Go up two levels (.jj/repo) to get the default workspace root
-  return dirname(dirname(repoStorePath));
-}
-
-export function getWorkspacesDirName(repoName: string, suffix: string | undefined): string {
-  return `${repoName}${suffix ?? WORKSPACES_DIR_SUFFIX}`;
+  return resolveDefaultWorkspaceFromRepoPointer(repoPath, readFileSync(repoPath, "utf-8"));
 }
 
 export function getWorkspacesDir(configSuffix?: string): string {
-  const defaultPath = getDefaultWorkspacePath();
-  const parentDir = dirname(defaultPath);
-  const repoName = basename(defaultPath);
-  return join(parentDir, getWorkspacesDirName(repoName, configSuffix));
+  return resolveWorkspacesDir(getDefaultWorkspacePath(), configSuffix);
 }
 
 export function getWorkspacePath(name: string, configSuffix?: string): string {
-  return join(getWorkspacesDir(configSuffix), name);
+  return resolveWorkspacePath(getDefaultWorkspacePath(), name, configSuffix);
 }
 
 export async function copyFileOrDir(src: string, dest: string): Promise<void> {
@@ -97,15 +88,6 @@ export async function removeDir(path: string): Promise<void> {
   if (existsSync(path)) {
     await execCommand("rm", ["-rf", path]);
   }
-}
-
-export function normalizeWorkspaceName(name: string): string {
-  const normalized = name.replace(/\//g, "-");
-  // "." and ".." would resolve outside the workspaces directory (e.g. `jw rm ..` deletes the repo's parent)
-  if (normalized === "" || normalized === "." || normalized === "..") {
-    throw new InvalidWorkspaceNameError(name);
-  }
-  return normalized;
 }
 
 /**
@@ -167,14 +149,7 @@ export function getChangeIdFromWorkspaceList(output: string, workspaceName: stri
  * Returns "default" if in the default workspace, otherwise returns the workspace name.
  */
 export function getCurrentWorkspaceName(): string {
-  const currentWorkspaceRoot = getRepoRoot();
-  const defaultWorkspacePath = getDefaultWorkspacePath();
-
-  if (currentWorkspaceRoot === defaultWorkspacePath) {
-    return DEFAULT_WORKSPACE_NAME;
-  }
-
-  return basename(currentWorkspaceRoot);
+  return resolveCurrentWorkspaceName(getRepoRoot(), getDefaultWorkspacePath());
 }
 
 /**

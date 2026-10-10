@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
 import pkg from "../../package.json" with { type: "json" };
-import { DEFAULT_WORKSPACE_NAME } from "../constants.ts";
+import { DEFAULT_WORKSPACE_NAME } from "../domain/workspace.ts";
 import { main } from "../index.ts";
 
 const mockCleanWorkspaces = vi.hoisted(() => vi.fn());

@@ -1,7 +1,7 @@
 import { existsSync } from "node:fs";
 import { beforeEach, describe, expect, type Mock, test, vi } from "vitest";
-import { getConfigPath, initConfig, loadConfig, parseConfig } from "../config.ts";
-import { ConfigAlreadyExistsError, InvalidWorkspacesDirSuffixError } from "../errors.ts";
+import { getConfigPath, initConfig, loadConfig } from "../config.ts";
+import { ConfigAlreadyExistsError } from "../errors.ts";
 import { getDefaultWorkspacePath } from "../utils.ts";
 
 vi.mock("node:fs", () => ({
@@ -16,124 +16,6 @@ describe("getConfigPath", () => {
   test("returns config file path under default workspace", () => {
     vi.mocked(getDefaultWorkspacePath).mockReturnValue("/home/user/myrepo");
     expect(getConfigPath()).toBe("/home/user/myrepo/.jwconfig");
-  });
-});
-
-describe("parseConfig", () => {
-  test("returns default config when data is null", () => {
-    const result = parseConfig(null);
-    expect(result).toEqual({
-      copyFiles: [],
-      postCreateCommands: [],
-      workspacesDirSuffix: "__ws",
-    });
-  });
-
-  test("returns default config when data is not an object", () => {
-    const result = parseConfig("invalid");
-    expect(result).toEqual({
-      copyFiles: [],
-      postCreateCommands: [],
-      workspacesDirSuffix: "__ws",
-    });
-  });
-
-  test("parses valid config correctly", () => {
-    const input = {
-      copyFiles: [".env", "config.json"],
-      postCreateCommands: ["npm install"],
-    };
-    const result = parseConfig(input);
-    expect(result).toEqual(input);
-  });
-
-  test("ignores legacy workspaces field", () => {
-    const input = {
-      workspaces: ["workspace1", "workspace2"],
-      copyFiles: [".env"],
-      postCreateCommands: [],
-    };
-    const result = parseConfig(input);
-    expect(result).toEqual({
-      copyFiles: [".env"],
-      postCreateCommands: [],
-    });
-  });
-
-  test("handles missing fields", () => {
-    const input = {
-      copyFiles: [".env"],
-    };
-    const result = parseConfig(input);
-    expect(result.copyFiles).toEqual([".env"]);
-    expect(result.postCreateCommands).toEqual([]);
-  });
-
-  test("handles empty object", () => {
-    const result = parseConfig({});
-    expect(result).toEqual({
-      copyFiles: [],
-      postCreateCommands: [],
-    });
-  });
-
-  test("defaults copyFiles when not string array", () => {
-    const result = parseConfig({ copyFiles: ["ok", 123] });
-    expect(result.copyFiles).toEqual([]);
-  });
-
-  test("defaults postCreateCommands when not string array", () => {
-    const result = parseConfig({ postCreateCommands: ["ok", null] });
-    expect(result.postCreateCommands).toEqual([]);
-  });
-});
-
-describe("parseConfig - workspacesDirSuffix", () => {
-  test("parses valid workspacesDirSuffix string", () => {
-    const result = parseConfig({ workspacesDirSuffix: "-ws" });
-    expect(result.workspacesDirSuffix).toBe("-ws");
-  });
-
-  test("parses another valid workspacesDirSuffix string", () => {
-    const result = parseConfig({ workspacesDirSuffix: "_workspaces" });
-    expect(result.workspacesDirSuffix).toBe("_workspaces");
-  });
-
-  test("returns undefined workspacesDirSuffix when not set", () => {
-    const result = parseConfig({});
-    expect(result.workspacesDirSuffix).toBeUndefined();
-  });
-
-  test("returns undefined workspacesDirSuffix when null", () => {
-    const result = parseConfig({ workspacesDirSuffix: null });
-    expect(result.workspacesDirSuffix).toBeUndefined();
-  });
-
-  test("returns undefined workspacesDirSuffix when number", () => {
-    const result = parseConfig({ workspacesDirSuffix: 123 });
-    expect(result.workspacesDirSuffix).toBeUndefined();
-  });
-
-  test("returns undefined workspacesDirSuffix when array", () => {
-    const result = parseConfig({ workspacesDirSuffix: ["a"] });
-    expect(result.workspacesDirSuffix).toBeUndefined();
-  });
-
-  test.each([
-    "/ws",
-    "../ws",
-    "a/b",
-    "\\ws",
-    "a\\b",
-  ])("throws when workspacesDirSuffix contains a path separator: %s", (suffix) => {
-    expect(() => parseConfig({ workspacesDirSuffix: suffix })).toThrow(
-      InvalidWorkspacesDirSuffixError
-    );
-  });
-
-  test("returns undefined workspacesDirSuffix when empty string", () => {
-    const result = parseConfig({ workspacesDirSuffix: "" });
-    expect(result.workspacesDirSuffix).toBeUndefined();
   });
 });
 

@@ -1,8 +1,9 @@
 #!/usr/bin/env bun
 
 import pkg from "../package.json" with { type: "json" };
-import { DEFAULT_WORKSPACE_NAME, SUPPORTED_SHELLS } from "./constants.ts";
-import { JwError, ValidationError } from "./errors.ts";
+import { SUPPORTED_SHELLS } from "./constants.ts";
+import { JwError, ValidationError } from "./domain/errors.ts";
+import { DEFAULT_WORKSPACE_NAME } from "./domain/workspace.ts";
 import {
   cleanWorkspaces,
   copyToWorkspace,

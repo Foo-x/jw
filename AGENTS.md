@@ -29,18 +29,24 @@ A CLI tool for managing jujutsu (jj) workspaces. Runtime is Bun with no external
 
 ```
 index.ts        → CLI entry point. Parses arguments and dispatches commands via switch.
-workspace.ts    → Business logic for all workspace operations (new/list/go/rm/rename/copy/clean/init/this/use).
-config.ts       → Loading, parsing, and saving .jwconfig. Defines the Config interface.
-utils.ts        → Low-level functions: jj command execution, path resolution, file operations.
-errors.ts       → Custom exception classes extending JwError base class.
-constants.ts    → App-wide constants (file names, default values, etc.).
+workspace.ts    → Use-case orchestration for all workspace operations (new/list/go/rm/rename/copy/clean/init/this/use).
+config.ts       → Loading and saving .jwconfig (file I/O).
+utils.ts        → Low-level functions: jj command execution, path resolution I/O, file operations.
+errors.ts       → Infrastructure-related exceptions (jj command failure, not a jj repo, config exists).
+constants.ts    → Infrastructure constants (file names, supported shells).
+domain/         → Pure business rules. No I/O.
+  workspace.ts  → Name normalization, path resolution, rm/rename/use/this guards, default names.
+  config.ts     → Config type, defaults, and parsing/validation.
+  errors.ts     → JwError base class and rule-violation exceptions.
 ```
+
+`domain/` may import only `node:path` and other `domain/` files. No `node:fs`, `Bun`, `process`, `console`, or outer layers. Biome enforces this via `overrides` in `biome.json`.
 
 ### Data flow
 
 1. `index.ts` receives a command and delegates to the corresponding function in `workspace.ts`
-2. `workspace.ts` loads config via `config.ts`, then executes jj commands and file operations via `utils.ts`
-3. Errors are classified as custom exceptions from `errors.ts` and caught uniformly in `index.ts` for display
+2. `workspace.ts` loads config via `config.ts`, applies rules from `domain/`, then executes jj commands and file operations via `utils.ts`
+3. Errors are classified as custom exceptions from `domain/errors.ts` and `errors.ts` and caught uniformly in `index.ts` for display
 
 ### Workspace path resolution
 

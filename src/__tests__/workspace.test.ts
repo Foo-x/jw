@@ -1,16 +1,16 @@
 import { afterEach, beforeAll, beforeEach, describe, expect, test, vi } from "vitest";
-import { DEFAULT_WORKSPACE_NAME } from "../constants.ts";
 import {
   CannotRemoveCurrentWorkspaceError,
   CannotRemoveDefaultWorkspaceError,
   CannotRenameCurrentWorkspaceError,
   CannotRenameDefaultWorkspaceError,
-  JujutsuCommandError,
   NotDefaultWorkspaceError,
   ValidationError,
   WorkspaceExistsError,
   WorkspaceNotFoundError,
-} from "../errors.ts";
+} from "../domain/errors.ts";
+import { DEFAULT_WORKSPACE_NAME } from "../domain/workspace.ts";
+import { JujutsuCommandError } from "../errors.ts";
 
 const mockExistsSync = vi.fn();
 const mockLoadConfig = vi.fn();

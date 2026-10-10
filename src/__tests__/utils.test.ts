@@ -1,10 +1,6 @@
 import { beforeEach, describe, expect, test, vi } from "vitest";
-import {
-  InvalidWorkspaceNameError,
-  JujutsuCommandError,
-  NotJujutsuRepositoryError,
-  WorkspaceNotFoundError,
-} from "../errors.ts";
+import { WorkspaceNotFoundError } from "../domain/errors.ts";
+import { JujutsuCommandError, NotJujutsuRepositoryError } from "../errors.ts";
 import {
   copyFileOrDir,
   execCommand,
@@ -15,8 +11,6 @@ import {
   getRepoRoot,
   getWorkspacePath,
   getWorkspacesDir,
-  getWorkspacesDirName,
-  normalizeWorkspaceName,
   parseJjWorkspaceList,
   removeDir,
 } from "../utils.ts";
@@ -164,51 +158,6 @@ describe("getRepoRoot", () => {
     mockRepoRoot(null);
 
     expect(() => getRepoRoot()).toThrow(NotJujutsuRepositoryError);
-  });
-});
-
-describe("normalizeWorkspaceName", () => {
-  test("replaces forward slashes with hyphens", () => {
-    expect(normalizeWorkspaceName("feature/login")).toBe("feature-login");
-  });
-
-  test("replaces multiple forward slashes", () => {
-    expect(normalizeWorkspaceName("feature/auth/login")).toBe("feature-auth-login");
-  });
-
-  test("returns unchanged string when no slashes", () => {
-    expect(normalizeWorkspaceName("feature-login")).toBe("feature-login");
-  });
-
-  test("throws on empty string", () => {
-    expect(() => normalizeWorkspaceName("")).toThrow(InvalidWorkspaceNameError);
-  });
-
-  test("throws on . and ..", () => {
-    expect(() => normalizeWorkspaceName(".")).toThrow(InvalidWorkspaceNameError);
-    expect(() => normalizeWorkspaceName("..")).toThrow(InvalidWorkspaceNameError);
-  });
-
-  test("allows names that merely contain dots", () => {
-    expect(normalizeWorkspaceName("a/..")).toBe("a-..");
-  });
-
-  test("handles string with only slashes", () => {
-    expect(normalizeWorkspaceName("///")).toBe("---");
-  });
-});
-
-describe("getWorkspacesDirName", () => {
-  test("uses provided suffix when valid string", () => {
-    expect(getWorkspacesDirName("my-repo", "-ws")).toBe("my-repo-ws");
-  });
-
-  test("uses default suffix when undefined", () => {
-    expect(getWorkspacesDirName("my-repo", undefined)).toBe("my-repo__ws");
-  });
-
-  test("uses provided suffix with underscore", () => {
-    expect(getWorkspacesDirName("my-repo", "_workspaces")).toBe("my-repo_workspaces");
   });
 });
 

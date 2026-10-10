@@ -1,18 +1,18 @@
 import { existsSync } from "node:fs";
 import { join } from "node:path";
-import { type Config, getConfigPath, initConfig, loadConfig } from "./config.ts";
-import { DEFAULT_WORKSPACE_NAME } from "./constants.ts";
+import { getConfigPath, initConfig, loadConfig } from "./config.ts";
+import type { Config } from "./domain/config.ts";
+import { ValidationError, WorkspaceExistsError, WorkspaceNotFoundError } from "./domain/errors.ts";
 import {
-  CannotRemoveCurrentWorkspaceError,
-  CannotRemoveDefaultWorkspaceError,
-  CannotRenameCurrentWorkspaceError,
-  CannotRenameDefaultWorkspaceError,
-  JujutsuCommandError,
-  NotDefaultWorkspaceError,
-  ValidationError,
-  WorkspaceExistsError,
-  WorkspaceNotFoundError,
-} from "./errors.ts";
+  assertInDefaultWorkspace,
+  assertNotDefaultName,
+  assertNotInDefaultWorkspace,
+  assertRemovable,
+  assertRenamable,
+  DEFAULT_WORKSPACE_NAME,
+  normalizeWorkspaceName,
+} from "./domain/workspace.ts";
+import { JujutsuCommandError } from "./errors.ts";
 import {
   copyFileOrDir,
   execCommand,
@@ -24,7 +24,6 @@ import {
   getRepoRoot,
   getWorkspacePath,
   getWorkspacesDir,
-  normalizeWorkspaceName,
   removeDir,
 } from "./utils.ts";
 
@@ -146,14 +145,7 @@ export async function goWorkspace(name: string): Promise<void> {
 export async function removeWorkspace(name: string): Promise<void> {
   const { normalizedName, workspacePath } = await resolveWorkspace(name);
 
-  // Prevent deletion of the default workspace
-  if (normalizedName === DEFAULT_WORKSPACE_NAME) {
-    throw new CannotRemoveDefaultWorkspaceError();
-  }
-
-  if (getRepoRoot() === workspacePath) {
-    throw new CannotRemoveCurrentWorkspaceError();
-  }
+  assertRemovable(normalizedName, workspacePath, getRepoRoot());
 
   console.log(`Removing workspace "${normalizedName}"...`);
 
@@ -191,13 +183,7 @@ export async function renameWorkspace(oldName: string, newName: string): Promise
   const { normalizedName: normalizedNewName, workspacePath: newPath } =
     await resolveWorkspace(newName);
 
-  if (normalizedOldName === DEFAULT_WORKSPACE_NAME) {
-    throw new CannotRenameDefaultWorkspaceError();
-  }
-
-  if (getRepoRoot() === oldPath) {
-    throw new CannotRenameCurrentWorkspaceError();
-  }
+  assertRenamable(normalizedOldName, oldPath, getRepoRoot());
 
   if (!existsSync(oldPath)) {
     throw new WorkspaceNotFoundError(normalizedOldName);
@@ -265,9 +251,7 @@ export async function initWorkspace(): Promise<void> {
 export async function thisWorkspace(): Promise<void> {
   const currentWorkspaceName = getCurrentWorkspaceName();
 
-  if (currentWorkspaceName === DEFAULT_WORKSPACE_NAME) {
-    throw new ValidationError("Cannot run 'jw this' from default workspace");
-  }
+  assertNotInDefaultWorkspace(currentWorkspaceName);
 
   const result = await execCommand("jj", ["workspace", "list"]);
 
@@ -300,16 +284,10 @@ export async function useWorkspace(name: string): Promise<void> {
 
   const normalizedName = normalizeWorkspaceName(name);
 
-  if (normalizedName === DEFAULT_WORKSPACE_NAME) {
-    throw new ValidationError("Cannot use the default workspace");
-  }
+  assertNotDefaultName(normalizedName);
 
-  const currentPath = getRepoRoot();
   const defaultPath = getDefaultWorkspacePath();
-
-  if (currentPath !== defaultPath) {
-    throw new NotDefaultWorkspaceError();
-  }
+  assertInDefaultWorkspace(getRepoRoot(), defaultPath);
 
   const changeId = await getJjWorkspaceChangeId(normalizedName);
 

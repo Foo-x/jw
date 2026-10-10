@@ -32,6 +32,35 @@
       "arrowParentheses": "always"
     }
   },
+  "overrides": [
+    {
+      "includes": ["**/src/domain/**/*.ts"],
+      "linter": {
+        "rules": {
+          "suspicious": { "noConsole": "error" },
+          "style": {
+            "noRestrictedGlobals": {
+              "level": "error",
+              "options": { "deniedGlobals": { "Bun": "domain must stay pure", "process": "domain must stay pure" } }
+            },
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "paths": {
+                  "node:fs": "domain must stay pure",
+                  "node:fs/promises": "domain must stay pure",
+                  "node:child_process": "domain must stay pure",
+                  "node:os": "domain must stay pure",
+                  "bun": "domain must stay pure"
+                },
+                "patterns": [{ "group": ["../*"], "message": "domain must not depend on outer layers" }]
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
   "files": {
     "includes": ["**/src/**/*.ts", "!**/node_modules", "!**/dist", "!**/*.d.ts"]
   }
