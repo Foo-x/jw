@@ -19,9 +19,9 @@ import {
   selectStaleWorkspaces,
   type WorkspaceEntry,
   type WorkspaceLocation,
-} from "../application/workspace.ts";
-import { getDefaultConfig } from "../domain/config.ts";
-import { DEFAULT_WORKSPACE_NAME } from "../domain/workspace.ts";
+} from "@/application/workspace.ts";
+import { getDefaultConfig } from "@/domain/config.ts";
+import { DEFAULT_WORKSPACE_NAME } from "@/domain/workspace.ts";
 import { JujutsuCommandError } from "./errors.ts";
 import type { Deps } from "./ports.ts";
 

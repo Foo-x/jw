@@ -1,7 +1,7 @@
 import { existsSync } from "node:fs";
 import { join } from "node:path";
-import type { ConfigRepository, Jujutsu } from "../controller/ports.ts";
-import { type Config, getDefaultConfig, parseConfig } from "../domain/config.ts";
+import type { ConfigRepository, Jujutsu } from "@/controller/ports.ts";
+import { type Config, getDefaultConfig, parseConfig } from "@/domain/config.ts";
 import { CONFIG_FILE_NAME } from "./constants.ts";
 
 export function createJwConfigRepository(jj: Jujutsu): ConfigRepository {

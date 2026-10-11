@@ -1,13 +1,13 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
-import { JujutsuCommandError } from "../../controller/errors.ts";
+import { JujutsuCommandError } from "@/controller/errors.ts";
 import type {
   CommandRunner,
   ConfigRepository,
   Deps,
   FileSystem,
   Jujutsu,
-} from "../../controller/ports.ts";
-import * as workspace from "../../controller/workspace.ts";
+} from "@/controller/ports.ts";
+import * as workspace from "@/controller/workspace.ts";
 import {
   CannotRemoveCurrentWorkspaceError,
   CannotRemoveDefaultWorkspaceError,
@@ -18,8 +18,8 @@ import {
   ValidationError,
   WorkspaceExistsError,
   WorkspaceNotFoundError,
-} from "../../domain/errors.ts";
-import { DEFAULT_WORKSPACE_NAME } from "../../domain/workspace.ts";
+} from "@/domain/errors.ts";
+import { DEFAULT_WORKSPACE_NAME } from "@/domain/workspace.ts";
 
 const defaultConfig = { copyFiles: [], postCreateCommands: [], workspacesDirSuffix: "__ws" };
 

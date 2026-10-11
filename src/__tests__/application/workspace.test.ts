@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
-import type { RepoContext } from "../../application/workspace.ts";
-import * as app from "../../application/workspace.ts";
+import type { RepoContext } from "@/application/workspace.ts";
+import * as app from "@/application/workspace.ts";
 import {
   CannotRemoveCurrentWorkspaceError,
   CannotRemoveDefaultWorkspaceError,
@@ -12,7 +12,7 @@ import {
   ValidationError,
   WorkspaceExistsError,
   WorkspaceNotFoundError,
-} from "../../domain/errors.ts";
+} from "@/domain/errors.ts";
 
 function ctx(overrides: Partial<RepoContext> = {}): RepoContext {
   return {

@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, test, vi } from "vitest";
-import { createProcessRunner } from "../../infrastructure/process.ts";
+import { createProcessRunner } from "@/infrastructure/process.ts";
 
 function mockSpawn(stdout: string, stderr: string, exitCode: number) {
   const stream = (text: string) =>

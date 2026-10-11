@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, test, vi } from "vitest";
-import type { CommandRunner } from "../../controller/ports.ts";
+import type { CommandRunner } from "@/controller/ports.ts";
 
 vi.mock("node:fs", () => ({
   existsSync: vi.fn(),
@@ -7,7 +7,7 @@ vi.mock("node:fs", () => ({
 }));
 
 import { existsSync, statSync } from "node:fs";
-import { createNodeFileSystem } from "../../infrastructure/file-system.ts";
+import { createNodeFileSystem } from "@/infrastructure/file-system.ts";
 
 const run = vi.fn();
 const runner: CommandRunner = { run };

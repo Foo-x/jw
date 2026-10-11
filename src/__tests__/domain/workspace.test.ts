@@ -7,7 +7,7 @@ import {
   InvalidWorkspaceNameError,
   NotDefaultWorkspaceError,
   ValidationError,
-} from "../../domain/errors.ts";
+} from "@/domain/errors.ts";
 import {
   assertInDefaultWorkspace,
   assertNotDefaultName,
@@ -20,7 +20,7 @@ import {
   resolveDefaultWorkspaceFromRepoPointer,
   resolveWorkspacePath,
   resolveWorkspacesDir,
-} from "../../domain/workspace.ts";
+} from "@/domain/workspace.ts";
 
 describe("normalizeWorkspaceName", () => {
   test("replaces forward slashes with hyphens", () => {

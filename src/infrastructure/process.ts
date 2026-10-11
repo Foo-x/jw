@@ -1,4 +1,4 @@
-import type { CommandRunner } from "../controller/ports.ts";
+import type { CommandRunner } from "@/controller/ports.ts";
 
 export function createProcessRunner(): CommandRunner {
   return {

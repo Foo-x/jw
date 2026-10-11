@@ -1,11 +1,11 @@
 import { join } from "node:path";
-import type { Config } from "../domain/config.ts";
+import type { Config } from "@/domain/config.ts";
 import {
   ConfigAlreadyExistsError,
   ValidationError,
   WorkspaceExistsError,
   WorkspaceNotFoundError,
-} from "../domain/errors.ts";
+} from "@/domain/errors.ts";
 import {
   assertInDefaultWorkspace,
   assertNotDefaultName,
@@ -17,7 +17,7 @@ import {
   resolveCurrentWorkspaceName,
   resolveWorkspacePath,
   resolveWorkspacesDir,
-} from "../domain/workspace.ts";
+} from "@/domain/workspace.ts";
 
 export interface Locations {
   defaultWorkspacePath: string;

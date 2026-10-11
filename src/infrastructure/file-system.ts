@@ -1,5 +1,5 @@
 import { existsSync, statSync } from "node:fs";
-import type { CommandRunner, FileSystem } from "../controller/ports.ts";
+import type { CommandRunner, FileSystem } from "@/controller/ports.ts";
 
 export function createNodeFileSystem(runner: CommandRunner): FileSystem {
   return {

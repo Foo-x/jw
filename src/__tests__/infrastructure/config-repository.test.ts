@@ -1,12 +1,12 @@
 import { beforeEach, describe, expect, type Mock, test, vi } from "vitest";
-import type { Jujutsu } from "../../controller/ports.ts";
+import type { Jujutsu } from "@/controller/ports.ts";
 
 vi.mock("node:fs", () => ({
   existsSync: vi.fn(),
 }));
 
 import { existsSync } from "node:fs";
-import { createJwConfigRepository } from "../../infrastructure/config-repository.ts";
+import { createJwConfigRepository } from "@/infrastructure/config-repository.ts";
 
 const configPath = "/home/user/myrepo/.jwconfig";
 const jj = { getDefaultWorkspacePath: () => "/home/user/myrepo" } as Jujutsu;

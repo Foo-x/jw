@@ -1,7 +1,6 @@
 #!/usr/bin/env bun
 
-import pkg from "../package.json" with { type: "json" };
-import type { Deps } from "./controller/ports.ts";
+import type { Deps } from "@/controller/ports.ts";
 import {
   cleanWorkspaces,
   copyToWorkspace,
@@ -13,13 +12,14 @@ import {
   renameWorkspace,
   thisWorkspace,
   useWorkspace,
-} from "./controller/workspace.ts";
-import { JwError, ValidationError } from "./domain/errors.ts";
-import { DEFAULT_WORKSPACE_NAME } from "./domain/workspace.ts";
-import { createJwConfigRepository } from "./infrastructure/config-repository.ts";
-import { createNodeFileSystem } from "./infrastructure/file-system.ts";
-import { createJujutsuCli } from "./infrastructure/jj.ts";
-import { createProcessRunner } from "./infrastructure/process.ts";
+} from "@/controller/workspace.ts";
+import { JwError, ValidationError } from "@/domain/errors.ts";
+import { DEFAULT_WORKSPACE_NAME } from "@/domain/workspace.ts";
+import { createJwConfigRepository } from "@/infrastructure/config-repository.ts";
+import { createNodeFileSystem } from "@/infrastructure/file-system.ts";
+import { createJujutsuCli } from "@/infrastructure/jj.ts";
+import { createProcessRunner } from "@/infrastructure/process.ts";
+import pkg from "../package.json" with { type: "json" };
 
 const SUPPORTED_SHELLS = ["bash"] as const;
 

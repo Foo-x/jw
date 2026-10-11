@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, test, vi } from "vitest";
+import { DEFAULT_WORKSPACE_NAME } from "@/domain/workspace.ts";
+import { main } from "@/index.ts";
 import pkg from "../../package.json" with { type: "json" };
-import { DEFAULT_WORKSPACE_NAME } from "../domain/workspace.ts";
-import { main } from "../index.ts";
 
 const mockCleanWorkspaces = vi.hoisted(() => vi.fn());
 const mockCopyToWorkspace = vi.hoisted(() => vi.fn());
@@ -14,7 +14,7 @@ const mockRenameWorkspace = vi.hoisted(() => vi.fn());
 const mockThisWorkspace = vi.hoisted(() => vi.fn());
 const mockUseWorkspace = vi.hoisted(() => vi.fn());
 
-vi.mock(import("../controller/workspace.ts"), () => ({
+vi.mock(import("@/controller/workspace.ts"), () => ({
   cleanWorkspaces: mockCleanWorkspaces,
   copyToWorkspace: mockCopyToWorkspace,
   goWorkspace: mockGoWorkspace,

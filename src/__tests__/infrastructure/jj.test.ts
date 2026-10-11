@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, test, vi } from "vitest";
-import { JujutsuCommandError, NotJujutsuRepositoryError } from "../../controller/errors.ts";
-import type { CommandRunner } from "../../controller/ports.ts";
+import { JujutsuCommandError, NotJujutsuRepositoryError } from "@/controller/errors.ts";
+import type { CommandRunner } from "@/controller/ports.ts";
 
 vi.mock("node:fs", () => ({
   existsSync: vi.fn(() => false),
@@ -13,7 +13,7 @@ import {
   createJujutsuCli,
   getChangeIdFromWorkspaceList,
   parseJjWorkspaceList,
-} from "../../infrastructure/jj.ts";
+} from "@/infrastructure/jj.ts";
 
 const REPO_ROOT = "/home/user/my-repo";
 const JJ_REPO = `${REPO_ROOT}/.jj/repo`;

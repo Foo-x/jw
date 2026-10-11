@@ -1,4 +1,4 @@
-import type { Config } from "../domain/config.ts";
+import type { Config } from "@/domain/config.ts";
 
 export interface CommandResult {
   stdout: string;

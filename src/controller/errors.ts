@@ -1,4 +1,4 @@
-import { JwError } from "../domain/errors.ts";
+import { JwError } from "@/domain/errors.ts";
 
 export class JujutsuCommandError extends JwError {
   constructor(

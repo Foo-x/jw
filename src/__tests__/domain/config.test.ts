@@ -1,6 +1,6 @@
 import { describe, expect, test } from "vitest";
-import { parseConfig } from "../../domain/config.ts";
-import { InvalidWorkspacesDirSuffixError } from "../../domain/errors.ts";
+import { parseConfig } from "@/domain/config.ts";
+import { InvalidWorkspacesDirSuffixError } from "@/domain/errors.ts";
 
 describe("parseConfig", () => {
   test("returns default config when data is null", () => {

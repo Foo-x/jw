@@ -1,8 +1,8 @@
 import { existsSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
-import { JujutsuCommandError, NotJujutsuRepositoryError } from "../controller/errors.ts";
-import type { CommandRunner, Jujutsu } from "../controller/ports.ts";
-import { resolveDefaultWorkspaceFromRepoPointer } from "../domain/workspace.ts";
+import { JujutsuCommandError, NotJujutsuRepositoryError } from "@/controller/errors.ts";
+import type { CommandRunner, Jujutsu } from "@/controller/ports.ts";
+import { resolveDefaultWorkspaceFromRepoPointer } from "@/domain/workspace.ts";
 import { JJ_DIR } from "./constants.ts";
 
 /**
