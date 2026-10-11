@@ -18,7 +18,7 @@ Read CLI commands from README.md.
 
 Running a single test file:
 ```bash
-bun run test src/__tests__/config.test.ts
+bun run test src/__tests__/infrastructure/config-repository.test.ts
 ```
 
 ## Architecture
@@ -28,25 +28,37 @@ A CLI tool for managing jujutsu (jj) workspaces. Runtime is Bun with no external
 ### Module layout
 
 ```
-index.ts        → CLI entry point. Parses arguments and dispatches commands via switch.
-workspace.ts    → Use-case orchestration for all workspace operations (new/list/go/rm/rename/copy/clean/init/this/use).
-config.ts       → Loading and saving .jwconfig (file I/O).
-utils.ts        → Low-level functions: jj command execution, path resolution I/O, file operations.
-errors.ts       → Infrastructure-related exceptions (jj command failure, not a jj repo, config exists).
-constants.ts    → Infrastructure constants (file names, supported shells).
-domain/         → Pure business rules. No I/O.
-  workspace.ts  → Name normalization, path resolution, rm/rename/use/this guards, default names.
-  config.ts     → Config type, defaults, and parsing/validation.
-  errors.ts     → JwError base class and rule-violation exceptions.
+index.ts                  → CLI entry point and composition root. Parses arguments, builds `Deps` from the infrastructure adapters, dispatches commands via switch.
+controller/               → Imperative shell. Talks to the outside world through ports.
+  workspace.ts            → Per-command orchestration (new/list/go/rm/rename/copy/clean/init/this/use): read → decide → act.
+  ports.ts                → Interfaces for external I/O: Jujutsu, FileSystem, CommandRunner, ConfigRepository, Deps.
+  errors.ts               → Port-related exceptions (jj command failure, not a jj repo).
+infrastructure/           → Adapters implementing the ports.
+  process.ts              → CommandRunner (Bun.spawn).
+  jj.ts                   → Jujutsu (jj CLI, `.jj/repo` resolution, output parsing).
+  file-system.ts          → FileSystem (node:fs, cp/mv/rm/mkdir).
+  config-repository.ts    → ConfigRepository (.jwconfig file I/O).
+  constants.ts            → File names.
+application/
+  workspace.ts            → Pure command-level decisions. Takes the results of I/O (paths, existence flags, change ids, config) and returns locations, plans, display lines, or throws rule violations.
+domain/                   → Pure business rules.
+  workspace.ts            → Name normalization, path resolution, rm/rename/use/this guards, default names.
+  config.ts               → Config type, defaults, and parsing/validation.
+  errors.ts               → JwError base class and rule-violation exceptions.
 ```
 
-`domain/` may import only `node:path` and other `domain/` files. No `node:fs`, `Bun`, `process`, `console`, or outer layers. Biome enforces this via `overrides` in `biome.json`.
+Dependencies point inward: `index.ts → controller/infrastructure`, `infrastructure → controller (ports, errors)`, `controller → application → domain`.
+
+- `domain/` and `application/` are pure: no `node:fs`, `Bun`, `process`, `console`, and no imports from outer layers. `domain/` may import only `node:path` and other `domain/` files.
+- `controller/` reaches the outside world only through ports (no `node:fs`, `Bun`, `process`, or `infrastructure/`). `console` output is allowed.
+- Biome enforces these via `overrides` in `biome.json`.
+- Pass the results of I/O into `application/` instead of letting it call out. Reads that depend on a previous decision stay in `controller/`.
 
 ### Data flow
 
-1. `index.ts` receives a command and delegates to the corresponding function in `workspace.ts`
-2. `workspace.ts` loads config via `config.ts`, applies rules from `domain/`, then executes jj commands and file operations via `utils.ts`
-3. Errors are classified as custom exceptions from `domain/errors.ts` and `errors.ts` and caught uniformly in `index.ts` for display
+1. `index.ts` builds `Deps` and delegates the command to the corresponding function in `controller/workspace.ts`
+2. The controller reads facts via `deps` (paths, config, existence, change ids), passes them to `application/` (which applies `domain/` rules), then acts on the result via `deps.jj` / `deps.fs` / `deps.runner`
+3. Errors are classified as custom exceptions from `domain/errors.ts` and `controller/errors.ts` and caught uniformly in `index.ts` for display
 
 ### Workspace path resolution
 
@@ -63,8 +75,9 @@ domain/         → Pure business rules. No I/O.
 
 ## Tests
 
-Tests live in `src/__tests__/` and use `vitest`.
-Workspace operations require a jj repository and are not covered by automated tests.
+Tests live in `src/__tests__/` (mirroring the source layout) and use `vitest`.
+`domain/` and `application/` are tested as pure functions; controllers with fake `Deps`; adapters with mocked `node:fs` / `Bun`.
+Real jj workspace operations are not covered by automated tests.
 
 ## Lint / Format
 

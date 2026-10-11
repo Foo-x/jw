@@ -1,9 +1,7 @@
 #!/usr/bin/env bun
 
 import pkg from "../package.json" with { type: "json" };
-import { SUPPORTED_SHELLS } from "./constants.ts";
-import { JwError, ValidationError } from "./domain/errors.ts";
-import { DEFAULT_WORKSPACE_NAME } from "./domain/workspace.ts";
+import type { Deps } from "./controller/ports.ts";
 import {
   cleanWorkspaces,
   copyToWorkspace,
@@ -15,7 +13,21 @@ import {
   renameWorkspace,
   thisWorkspace,
   useWorkspace,
-} from "./workspace.ts";
+} from "./controller/workspace.ts";
+import { JwError, ValidationError } from "./domain/errors.ts";
+import { DEFAULT_WORKSPACE_NAME } from "./domain/workspace.ts";
+import { createJwConfigRepository } from "./infrastructure/config-repository.ts";
+import { createNodeFileSystem } from "./infrastructure/file-system.ts";
+import { createJujutsuCli } from "./infrastructure/jj.ts";
+import { createProcessRunner } from "./infrastructure/process.ts";
+
+const SUPPORTED_SHELLS = ["bash"] as const;
+
+function createDeps(): Deps {
+  const runner = createProcessRunner();
+  const jj = createJujutsuCli(runner);
+  return { jj, runner, fs: createNodeFileSystem(runner), config: createJwConfigRepository(jj) };
+}
 
 function showHelp(): void {
   console.log(`
@@ -125,56 +137,57 @@ export async function main() {
   }
 
   const command = args[0];
+  const deps = createDeps();
 
   try {
     switch (command) {
       case "init":
-        await initWorkspace();
+        await initWorkspace(deps);
         break;
 
       case "new": {
         const { name, revision } = parseNewCommandArgs(args);
 
         requireArg(name, "workspace name", "jw new <name> [-r <revision>]");
-        await newWorkspace(name, revision);
+        await newWorkspace(deps, name, revision);
         break;
       }
 
       case "list":
-        await listWorkspaces();
+        await listWorkspaces(deps);
         break;
 
       case "go":
-        await goWorkspace(args[1] || DEFAULT_WORKSPACE_NAME);
+        await goWorkspace(deps, args[1] || DEFAULT_WORKSPACE_NAME);
         break;
 
       case "rm":
         requireArg(args[1], "workspace name", "jw rm <name>");
-        await removeWorkspace(args[1]);
+        await removeWorkspace(deps, args[1]);
         break;
 
       case "rename":
         requireArg(args[1], "old workspace name", "jw rename <old> <new>");
         requireArg(args[2], "new workspace name", "jw rename <old> <new>");
-        await renameWorkspace(args[1], args[2]);
+        await renameWorkspace(deps, args[1], args[2]);
         break;
 
       case "copy":
         requireArg(args[1], "workspace name", "jw copy <name>");
-        await copyToWorkspace(args[1]);
+        await copyToWorkspace(deps, args[1]);
         break;
 
       case "clean":
-        await cleanWorkspaces();
+        await cleanWorkspaces(deps);
         break;
 
       case "this":
-        await thisWorkspace();
+        await thisWorkspace(deps);
         break;
 
       case "use":
         requireArg(args[1], "workspace name", "jw use <name>");
-        await useWorkspace(args[1]);
+        await useWorkspace(deps, args[1]);
         break;
 
       case "completion":

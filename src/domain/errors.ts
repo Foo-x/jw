@@ -74,3 +74,10 @@ export class NotDefaultWorkspaceError extends JwError {
     this.name = "NotDefaultWorkspaceError";
   }
 }
+
+export class ConfigAlreadyExistsError extends JwError {
+  constructor(path: string) {
+    super(`Config file already exists: ${path}`);
+    this.name = "ConfigAlreadyExistsError";
+  }
+}

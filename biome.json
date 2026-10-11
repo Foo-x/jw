@@ -59,6 +59,59 @@
           }
         }
       }
+    },
+    {
+      "includes": ["**/src/application/**/*.ts"],
+      "linter": {
+        "rules": {
+          "suspicious": { "noConsole": "error" },
+          "style": {
+            "noRestrictedGlobals": {
+              "level": "error",
+              "options": { "deniedGlobals": { "Bun": "application must stay pure", "process": "application must stay pure" } }
+            },
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "paths": {
+                  "node:fs": "application must stay pure",
+                  "node:fs/promises": "application must stay pure",
+                  "node:child_process": "application must stay pure",
+                  "node:os": "application must stay pure",
+                  "bun": "application must stay pure"
+                },
+                "patterns": [{ "group": ["../controller/*", "../infrastructure/*", "../index.ts"], "message": "application must not depend on outer layers" }]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "includes": ["**/src/controller/**/*.ts"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedGlobals": {
+              "level": "error",
+              "options": { "deniedGlobals": { "Bun": "controller must go through ports", "process": "controller must go through ports" } }
+            },
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "paths": {
+                  "node:fs": "controller must go through ports",
+                  "node:fs/promises": "controller must go through ports",
+                  "node:child_process": "controller must go through ports",
+                  "node:os": "controller must go through ports",
+                  "bun": "controller must go through ports"
+                },
+                "patterns": [{ "group": ["../infrastructure/*", "../index.ts"], "message": "controller must not depend on outer layers" }]
+              }
+            }
+          }
+        }
+      }
     }
   ],
   "files": {

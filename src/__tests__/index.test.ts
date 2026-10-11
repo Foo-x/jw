@@ -14,7 +14,7 @@ const mockRenameWorkspace = vi.hoisted(() => vi.fn());
 const mockThisWorkspace = vi.hoisted(() => vi.fn());
 const mockUseWorkspace = vi.hoisted(() => vi.fn());
 
-vi.mock(import("../workspace.ts"), () => ({
+vi.mock(import("../controller/workspace.ts"), () => ({
   cleanWorkspaces: mockCleanWorkspaces,
   copyToWorkspace: mockCopyToWorkspace,
   goWorkspace: mockGoWorkspace,
@@ -86,7 +86,7 @@ describe("index CLI", () => {
 
     await main();
 
-    expect(mockNewWorkspace).toHaveBeenCalledWith("feature", "abc123");
+    expect(mockNewWorkspace).toHaveBeenCalledWith(expect.anything(), "feature", "abc123");
   });
 
   test("lists workspaces", async () => {
@@ -102,7 +102,7 @@ describe("index CLI", () => {
 
     await main();
 
-    expect(mockGoWorkspace).toHaveBeenCalledWith(DEFAULT_WORKSPACE_NAME);
+    expect(mockGoWorkspace).toHaveBeenCalledWith(expect.anything(), DEFAULT_WORKSPACE_NAME);
   });
 
   test("uses provided workspace for go", async () => {
@@ -110,7 +110,7 @@ describe("index CLI", () => {
 
     await main();
 
-    expect(mockGoWorkspace).toHaveBeenCalledWith("feature");
+    expect(mockGoWorkspace).toHaveBeenCalledWith(expect.anything(), "feature");
   });
 
   test("removes workspace", async () => {
@@ -118,7 +118,7 @@ describe("index CLI", () => {
 
     await main();
 
-    expect(mockRemoveWorkspace).toHaveBeenCalledWith("old");
+    expect(mockRemoveWorkspace).toHaveBeenCalledWith(expect.anything(), "old");
   });
 
   test("renames workspace", async () => {
@@ -126,7 +126,7 @@ describe("index CLI", () => {
 
     await main();
 
-    expect(mockRenameWorkspace).toHaveBeenCalledWith("old", "new");
+    expect(mockRenameWorkspace).toHaveBeenCalledWith(expect.anything(), "old", "new");
   });
 
   test("copies workspace files", async () => {
@@ -134,7 +134,7 @@ describe("index CLI", () => {
 
     await main();
 
-    expect(mockCopyToWorkspace).toHaveBeenCalledWith("docs");
+    expect(mockCopyToWorkspace).toHaveBeenCalledWith(expect.anything(), "docs");
   });
 
   test("cleans workspaces", async () => {
@@ -158,7 +158,7 @@ describe("index CLI", () => {
 
     await main();
 
-    expect(mockUseWorkspace).toHaveBeenCalledWith("feature");
+    expect(mockUseWorkspace).toHaveBeenCalledWith(expect.anything(), "feature");
   });
 
   test("reports validation error for missing use arg", async () => {
